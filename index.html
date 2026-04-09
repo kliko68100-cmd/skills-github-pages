@@ -842,3 +842,52 @@ setInterval(fetchRate,60000);
 setInterval(updateClock,1000);
 updateClock();
 </script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-database.js";
+
+// 🔹 CONFIGURATION FIREBASE
+const firebaseConfig = {
+databaseURL: "https://klikogestion-default-rtdb.europe-west1.firebasedatabase.app"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 🔹 REFERENCES DB
+const dbProducts = ref(db, "products");
+const dbSales = ref(db, "sales");
+const dbOrders = ref(db, "orders");
+
+// 🔹 FONCTIONS DE SAUVEGARDE
+async function syncProducts() {
+try { await set(dbProducts, { products, nextProdId }); } catch(e){console.error("Erreur products:", e); }
+}
+async function syncSales() {
+try { await set(dbSales, sales); } catch(e){console.error("Erreur sales:", e); }
+}
+async function syncOrders() {
+try { await set(dbOrders, orders); } catch(e){console.error("Erreur orders:", e); }
+}
+
+// 🔹 CHARGEMENT INITIAL
+async function loadFirebaseData() {
+try {
+const p = await get(dbProducts); if(p.exists()) { products = p.val().products; nextProdId = p.val().nextProdId||22; }
+const s = await get(dbSales); if(s.exists()) sales = s.val();
+const o = await get(dbOrders); if(o.exists()) orders = o.val();
+renderStock(); renderHisto(); renderTicket(); renderKpis(); // tes fonctions d'affichage
+} catch(e){ console.error("Erreur chargement Firebase:", e); }
+}
+loadFirebaseData();
+
+// 🔹 SYNCHRONISATION EN DIRECT
+onValue(dbProducts, snapshot => { if(snapshot.exists()){ products = snapshot.val().products; nextProdId = snapshot.val().nextProdId||22; renderStock(); }});
+onValue(dbSales, snapshot => { if(snapshot.exists()){ sales = snapshot.val(); renderHisto(); renderKpis(); }});
+onValue(dbOrders, snapshot => { if(snapshot.exists()){ orders = snapshot.val(); renderOrders(); }});
+
+// 🔹 REMPLACE TES ANCIENNES FONCTIONS DE SAUVEGARDE
+// Exemple :
+window.saveProducts = syncProducts;
+window.saveSales = syncSales;
+window.saveOrders = syncOrders;
+</script>
