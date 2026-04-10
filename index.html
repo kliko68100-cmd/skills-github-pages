@@ -623,6 +623,77 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   .profiles-grid{grid-template-columns:1fr 1fr}
   .prod-grid{grid-template-columns:repeat(2,1fr)}
 }
+/* ====================== COACH IA & UPSELL ====================== */
+.coach-card {
+  background: linear-gradient(135deg, var(--or), var(--or2));
+  color: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--sh2);
+  position: relative;
+  overflow: hidden;
+}
+
+.coach-card::before {
+  content: '🤖';
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  font-size: 110px;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.coach-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coach-advice {
+  background: rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.coach-advice:last-child {
+  margin-bottom: 0;
+}
+
+.upsell-box {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 12px 0;
+  box-shadow: var(--sh);
+}
+
+.upsell-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt2);
+  margin-bottom: 10px;
+}
+
+.upsell-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--bd);
+}
+
+.upsell-item:last-child {
+  border-bottom: none;
+}
 </style>
 </head>
 <body>
@@ -1308,6 +1379,86 @@ window.fbDeleteRepair=k=>fbRemove('repairs/'+k);
 window.fbSaveProfiles=p=>fbSet('profiles2',p);
 
 console.log('Firebase v3 ✓');
+// ====================== COACH IA SIMULÉ + UPSELL ======================
+
+function getCoachAdvices() {
+  const ts = todaySales();                    // ventes aujourd'hui
+  const totalToday = ts.reduce((a, s) => a + s.total, 0);
+  const goal = parseFloat(document.getElementById('goal-inp')?.value) || 200;
+  const avgBasket = ts.length ? (totalToday / ts.length).toFixed(2) : 0;
+
+  const advices = [];
+
+  // Conseil sur l'objectif
+  const progress = Math.round((totalToday / goal) * 100);
+  if (progress < 50) {
+    advices.push(`💡 Il te manque ${fmt(goal - totalToday)} pour ton objectif aujourd'hui. Pousse les Power Bank et chargeurs !`);
+  } else if (progress > 110) {
+    advices.push(`🔥 Excellent ! Tu as dépassé ton objectif de ${progress - 100}%. Continue comme ça !`);
+  } else {
+    advices.push(`📈 Tu es à ${progress}% de ton objectif. Bon rythme aujourd'hui.`);
+  }
+
+  // Panier moyen
+  if (avgBasket < 18) {
+    advices.push(`📊 Panier moyen : ${avgBasket}€. Pense à proposer un accessoire avec chaque vente.`);
+  } else if (avgBasket > 28) {
+    advices.push(`🚀 Super panier moyen (${avgBasket}€) ! Tes clients achètent bien.`);
+  }
+
+  // Produits qui dorment
+  const slow = window._P.filter(p => p.stock > 5 && p.cat !== 'Café')
+                       .sort((a, b) => a.stock - b.stock)
+                       .slice(0, 2);
+  if (slow.length) {
+    advices.push(`📉 ${slow[0].name} se vend lentement. Une petite promo pourrait aider.`);
+  }
+
+  // Conseil général
+  if (Math.random() > 0.5) {
+    advices.push(`💡 Astuce : Les clients qui prennent des écouteurs TWS achètent souvent un chargeur en complément.`);
+  }
+
+  return advices.length ? advices : ["Tout se passe bien aujourd'hui. Continue comme ça 👌"];
+}
+
+// Suggestions upsell selon le produit
+function getUpsellSuggestions(productId) {
+  const product = window._P.find(p => p.id === productId);
+  if (!product) return [];
+
+  let suggestions = [];
+
+  if (product.cat.includes('Écouteurs') || product.name.toLowerCase().includes('airbuds')) {
+    suggestions = window._P.filter(p => 
+      p.name.toLowerCase().includes('chargeur') || 
+      p.name.toLowerCase().includes('câble') ||
+      p.name.toLowerCase().includes('power bank')
+    ).slice(0, 3);
+  } 
+  else if (product.cat.includes('Power Bank') || product.name.toLowerCase().includes('power')) {
+    suggestions = window._P.filter(p => p.name.toLowerCase().includes('câble') || p.name.toLowerCase().includes('chargeur')).slice(0, 2);
+  } 
+  else if (product.cat.includes('Chargeur')) {
+    suggestions = window._P.filter(p => p.cat.includes('Écouteurs')).slice(0, 2);
+  }
+
+  return suggestions.filter(s => s.id !== productId);
+}
+
+// Rendu du Coach
+function renderCoach() {
+  const advices = getCoachAdvices();
+  let html = `<div class="coach-card" id="coach-panel">
+    <div class="coach-title">🤖 Coach Kliko • Aujourd'hui</div>`;
+
+  advices.forEach(advice => {
+    html += `<div class="coach-advice">${advice}</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
 </script>
 
 <!-- ═══════════════════════════════════════
@@ -1623,7 +1774,19 @@ function cashSalesTotal(){return window._S.filter(s=>!s.payMode||s.payMode==='es
 function totalDeds(){return window._D.reduce((a,d)=>a+d.amount,0);}
 function saveGoal(){localStorage.setItem('kliko_goal',document.getElementById('goal-inp').value);}
 
-function renderDash(){
+function renderDash(){function renderDash() {
+  // === COACH IA - Suppression de l'ancien si présent ===
+  const existingCoach = document.getElementById('coach-panel');
+  if (existingCoach) existingCoach.remove();
+
+  // === Ajout du Coach en haut du dashboard ===
+  const coachHTML = renderCoach();
+  document.getElementById('p-dash').insertAdjacentHTML('afterbegin', coachHTML);
+
+  // === Le reste de ta fonction reste IDENTIQUE ===
+  const ts = todaySales();
+  const ws = weekSales();
+  // ... tout le code qui suit (kpis, dash-grid, etc.) reste inchangé
   const ts=todaySales(),ws=weekSales();
   const td=ts.reduce((a,s)=>a+s.total,0),wd=ws.reduce((a,s)=>a+s.total,0);
   const goal=parseFloat(document.getElementById('goal-inp').value)||200;
@@ -1709,7 +1872,34 @@ function addTicket(id){
   const ex=_ticket.find(x=>x.id===id);
   if(ex)ex.qty++;else _ticket.push({id,name:p.name,price:p.price,qty:1});
   renderTicket();
-}
+  // === Suggestions d'upsell (Coach) ===
+  setTimeout(() => {
+    const suggestions = getUpsellSuggestions(id);
+    if (suggestions.length === 0) return;
+
+    let html = `<div class="upsell-box" id="upsell-temp">
+      <div class="upsell-title">💡 Souvent acheté avec :</div>`;
+
+    suggestions.forEach(s => {
+      html += `
+        <div class="upsell-item">
+          <div>
+            <span style="font-weight:500">${s.name}</span><br>
+            <small style="color:var(--or)">${fmt(s.price)}</small>
+          </div>
+          <button class="btn btn-or" style="padding:5px 12px;font-size:12px" onclick="addTicket(${s.id});this.closest('.upsell-box').remove()">+ Ajouter</button>
+        </div>`;
+    });
+
+    html += `</div>`;
+
+    const ticketEl = document.querySelector('.ticket');
+    if (ticketEl) {
+      const old = document.getElementById('upsell-temp');
+      if (old) old.remove();
+      ticketEl.insertAdjacentHTML('beforeend', html);
+    }
+  }, 400);}
 function renderTicket(){
   const el=document.getElementById('t-items');
   const tc=document.getElementById('t-count');
