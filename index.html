@@ -1774,19 +1774,20 @@ function cashSalesTotal(){return window._S.filter(s=>!s.payMode||s.payMode==='es
 function totalDeds(){return window._D.reduce((a,d)=>a+d.amount,0);}
 function saveGoal(){localStorage.setItem('kliko_goal',document.getElementById('goal-inp').value);}
 
-function renderDash(){function renderDash() {
-  // === COACH IA - Suppression de l'ancien si présent ===
+function renderDash(){function renderDash() {function renderDash() {
+  // === COACH IA ===
   const existingCoach = document.getElementById('coach-panel');
   if (existingCoach) existingCoach.remove();
 
-  // === Ajout du Coach en haut du dashboard ===
   const coachHTML = renderCoach();
   document.getElementById('p-dash').insertAdjacentHTML('afterbegin', coachHTML);
 
-  // === Le reste de ta fonction reste IDENTIQUE ===
+  // Le reste de ta fonction reste inchangé
   const ts = todaySales();
   const ws = weekSales();
-  // ... tout le code qui suit (kpis, dash-grid, etc.) reste inchangé
+  const td = ts.reduce((a,s)=>a+s.total,0);
+  const wd = ws.reduce((a,s)=>a+s.total,0);
+  // ... tout le reste de ton code original
   const ts=todaySales(),ws=weekSales();
   const td=ts.reduce((a,s)=>a+s.total,0),wd=ws.reduce((a,s)=>a+s.total,0);
   const goal=parseFloat(document.getElementById('goal-inp').value)||200;
