@@ -1774,72 +1774,86 @@ function cashSalesTotal(){return window._S.filter(s=>!s.payMode||s.payMode==='es
 function totalDeds(){return window._D.reduce((a,d)=>a+d.amount,0);}
 function saveGoal(){localStorage.setItem('kliko_goal',document.getElementById('goal-inp').value);}
 
-function renderDash(){function renderDash() {function renderDash() {
-  // === COACH IA ===
+function renderDash() {
+  // === COACH IA - Affichage du panneau en haut ===
   const existingCoach = document.getElementById('coach-panel');
   if (existingCoach) existingCoach.remove();
 
   const coachHTML = renderCoach();
   document.getElementById('p-dash').insertAdjacentHTML('afterbegin', coachHTML);
 
-  // Le reste de ta fonction reste inchangé
+  // === Code original de renderDash() ===
   const ts = todaySales();
   const ws = weekSales();
-  const td = ts.reduce((a,s)=>a+s.total,0);
-  const wd = ws.reduce((a,s)=>a+s.total,0);
-  // ... tout le reste de ton code original
-  const ts=todaySales(),ws=weekSales();
-  const td=ts.reduce((a,s)=>a+s.total,0),wd=ws.reduce((a,s)=>a+s.total,0);
-  const goal=parseFloat(document.getElementById('goal-inp').value)||200;
-  const pct=Math.min(100,Math.round(td/goal*100));
-  document.getElementById('k-today').textContent=fmt(td);
-  document.getElementById('k-today-n').textContent=ts.length+' vente(s)';
-  document.getElementById('k-week').textContent=fmt(wd);
-  document.getElementById('k-week-n').textContent=ws.length+' vente(s)';
-  const cash=cashSalesTotal()-totalDeds();
-  document.getElementById('k-cash').textContent=fmt(Math.abs(cash));
-  document.getElementById('k-cash').className='kpi-v '+(cash<0?'r':'g');
-  document.getElementById('k-cash-s').textContent=window._D.length+' déduction(s)';
-  document.getElementById('k-low').textContent=window._P.filter(p=>p.stock<3&&p.cat!=='Café').length;
-  document.getElementById('goal-pct').textContent=pct+'%';
-  document.getElementById('goal-bar').style.width=pct+'%';
-  const dn=document.getElementById('d-date');if(dn)dn.textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  const td = ts.reduce((a, s) => a + s.total, 0);
+  const wd = ws.reduce((a, s) => a + s.total, 0);
+  const goal = parseFloat(document.getElementById('goal-inp').value) || 200;
+  const pct = Math.min(100, Math.round(td / goal * 100));
 
-  const ds=document.getElementById('d-sales');
-  const rec=[...ts].sort((a,b)=>b.ts-a.ts).slice(0,5);
-  ds.innerHTML=rec.length?rec.map(s=>`
+  document.getElementById('k-today').textContent = fmt(td);
+  document.getElementById('k-today-n').textContent = ts.length + ' vente(s)';
+  document.getElementById('k-week').textContent = fmt(wd);
+  document.getElementById('k-week-n').textContent = ws.length + ' vente(s)';
+
+  const cash = cashSalesTotal() - totalDeds();
+  document.getElementById('k-cash').textContent = fmt(Math.abs(cash));
+  document.getElementById('k-cash').className = 'kpi-v ' + (cash < 0 ? 'r' : 'g');
+  document.getElementById('k-cash-s').textContent = window._D.length + ' déduction(s)';
+
+  document.getElementById('k-low').textContent = window._P.filter(p => p.stock < 3 && p.cat !== 'Café').length;
+  document.getElementById('goal-pct').textContent = pct + '%';
+  document.getElementById('goal-bar').style.width = pct + '%';
+
+  const dn = document.getElementById('d-date');
+  if (dn) dn.textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // Dernières ventes
+  const ds = document.getElementById('d-sales');
+  const rec = [...ts].sort((a, b) => b.ts - a.ts).slice(0, 5);
+  ds.innerHTML = rec.length ? rec.map(s => `
     <div class="row">
-      <div><div style="font-size:12px;font-weight:500">${s.label}</div>
-      <div style="font-size:10px;color:var(--txt2)">${new Date(s.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${s.seller} · <span style="color:${s.payMode==='carte'?'var(--bl)':'var(--g)'};font-weight:600">${s.payMode==='carte'?'💳':'💵'}</span></div></div>
+      <div>
+        <div style="font-size:12px;font-weight:500">${s.label}</div>
+        <div style="font-size:10px;color:var(--txt2)">${new Date(s.ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · ${s.seller} · <span style="color:${s.payMode === 'carte' ? 'var(--bl)' : 'var(--g)'};font-weight:600">${s.payMode === 'carte' ? '💳' : '💵'}</span></div>
+      </div>
       <span style="color:var(--or);font-weight:700;font-size:13px;font-family:'Syne',sans-serif">${fmt(s.total)}</span>
-    </div>`).join(''):'<div class="empty">Aucune vente</div>';
+    </div>`).join('') : '<div class="empty">Aucune vente</div>';
 
-  const wd2=[0,0,0,0,0,0,0];const days=['L','M','M','J','V','S','D'];
-  ws.forEach(s=>{const d=new Date(s.ts);wd2[(d.getDay()||7)-1]+=s.total;});
-  const mx=Math.max(...wd2,1);
-  document.getElementById('wchart').innerHTML=days.map((d,i)=>`
+  // Semaine
+  const wd2 = [0, 0, 0, 0, 0, 0, 0];
+  const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  ws.forEach(s => {
+    const d = new Date(s.ts);
+    wd2[(d.getDay() || 7) - 1] += s.total;
+  });
+  const mx = Math.max(...wd2, 1);
+  document.getElementById('wchart').innerHTML = days.map((d, i) => `
     <div class="wb">
-      <div class="wbr" style="height:${Math.round(wd2[i]/mx*70)}px" title="${fmt(wd2[i])}"></div>
+      <div class="wbr" style="height:${Math.round(wd2[i] / mx * 70)}px" title="${fmt(wd2[i])}"></div>
       <div class="wbl">${d}</div>
     </div>`).join('');
-  document.getElementById('w-total').textContent='Total : '+fmt(wd);
+  document.getElementById('w-total').textContent = 'Total : ' + fmt(wd);
 
-  const counts={};
-  ws.forEach(s=>(s.items||[]).forEach(it=>{counts[it.name]=(counts[it.name]||0)+it.qty;}));
-  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  document.getElementById('d-top').innerHTML=top.length?top.map(([n,q],i)=>`
+  // Top produits
+  const counts = {};
+  ws.forEach(s => (s.items || []).forEach(it => {
+    counts[it.name] = (counts[it.name] || 0) + it.qty;
+  }));
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  document.getElementById('d-top').innerHTML = top.length ? top.map(([n, q], i) => `
     <div class="row">
       <div style="display:flex;align-items:center;gap:7px">
-        <span style="font-size:11px;font-weight:700;color:var(--or);width:16px;font-family:'Syne',sans-serif">${i+1}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--or);width:16px;font-family:'Syne',sans-serif">${i + 1}</span>
         <span style="font-size:12px">${n}</span>
       </div>
       <span style="font-size:11px;color:var(--txt2)">${q}×</span>
-    </div>`).join(''):'<div class="empty">Aucune donnée</div>';
+    </div>`).join('') : '<div class="empty">Aucune donnée</div>';
 
-  const alerts=window._P.filter(p=>p.stock<3&&p.cat!=='Café');
-  document.getElementById('d-alerts').innerHTML=alerts.length?alerts.map(p=>`
+  // Alertes stock
+  const alerts = window._P.filter(p => p.stock < 3 && p.cat !== 'Café');
+  document.getElementById('d-alerts').innerHTML = alerts.length ? alerts.map(p => `
     <div class="row"><span style="font-size:12px">${p.name}</span>
-    <span class="badge ${p.stock===0?'br':'bw'}">${p.stock===0?'Épuisé':p.stock+' restant'}</span></div>`).join(''):'<div class="empty">Aucune alerte 🎉</div>';
+    <span class="badge ${p.stock === 0 ? 'br' : 'bw'}">${p.stock === 0 ? 'Épuisé' : p.stock + ' restant'}</span></div>`).join('') : '<div class="empty">Aucune alerte 🎉</div>';
 }
 
 // ════════════════════════════════════════
