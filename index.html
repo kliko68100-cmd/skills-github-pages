@@ -2722,5 +2722,35 @@ window.addEventListener('load',()=>{
   updateClock();
 });
 </script>
-<a href="client.html" target="_blank">Voir boutique client</a></body>
+<div class="client-btn" onclick="window.open('client.html','_blank')">
+  🌐 Boutique
+</div>
+
+<style>
+.client-btn{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  padding:12px 16px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#E87D20,#F5A050);
+  color:#fff;
+  font-weight:600;
+  font-size:13px;
+  font-family:'DM Sans',sans-serif;
+  cursor:pointer;
+  box-shadow:0 6px 20px rgba(232,125,32,.35);
+  transition:all .2s ease;
+  z-index:999;
+}
+
+.client-btn:hover{
+  transform:translateY(-2px) scale(1.03);
+  box-shadow:0 10px 30px rgba(232,125,32,.45);
+}
+
+.client-btn:active{
+  transform:scale(.95);
+}
+</style></body>
 </html>
