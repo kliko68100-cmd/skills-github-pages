@@ -188,6 +188,7 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
 .sync-dot.syncing{background:var(--or);animation:pulse .8s infinite}
 .sync-dot.error{background:var(--r)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* Theme toggle */
 .theme-btn{
@@ -686,6 +687,10 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
      MAIN APP
 ═══════════════════════════════════════ -->
 <div id="main-app" style="display:none;flex-direction:column;min-height:100vh;background:var(--bg);transition:background .3s">
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="width:40px;height:40px;border:3px solid var(--bd);border-top-color:var(--or);border-radius:50%;animation:spin .7s linear infinite"></div>
+  <div style="font-size:13px;color:var(--txt2);font-family:'Syne',sans-serif;font-weight:600">Chargement des données…</div>
+</div>
   <div class="topbar">
     <div class="logo">Kli<span>k</span>o</div>
     <div class="nav" id="nav"></div>
@@ -1054,7 +1059,30 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
     </div>
   </div>
 
-  <!-- PROFILS -->
+ <!-- FACTURES -->
+  <div class="page" id="p-factures">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:15px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt)">🧾 Factures</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+        <select class="fi" id="inv-filter" onchange="renderFactures()" style="width:auto;padding:6px 10px">
+          <option value="all">Toutes</option>
+          <option value="Brouillon">📝 Brouillon</option>
+          <option value="Envoyée">📤 Envoyée</option>
+          <option value="Payée">✅ Payée</option>
+        </select>
+        <button class="btn btn-or" onclick="openNewInvoice()">+ Nouvelle facture</button>
+      </div>
+    </div>
+    <div class="kpis" style="margin-bottom:14px">
+      <div class="kpi"><span class="kpi-icon">🧾</span><div class="kpi-l">Total factures</div><div class="kpi-v or" id="invk-total">0</div></div>
+      <div class="kpi"><span class="kpi-icon">⏳</span><div class="kpi-l">En attente</div><div class="kpi-v r" id="invk-wait">0</div></div>
+      <div class="kpi"><span class="kpi-icon">✅</span><div class="kpi-l">Payées</div><div class="kpi-v g" id="invk-paid">0</div></div>
+      <div class="kpi"><span class="kpi-icon">💰</span><div class="kpi-l">CA facturé</div><div class="kpi-v or" id="invk-ca">0,00 €</div></div>
+    </div>
+    <div id="inv-list"><div class="empty">Aucune facture</div></div>
+  </div>
+
+<!-- PROFILS -->
   <div class="page" id="p-profils">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-size:15px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt)">👥 Gestion des profils</div>
@@ -1225,6 +1253,60 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   </div>
 </div>
 
+<!-- Facture -->
+<div class="ov" id="inv-ov">
+  <div class="modal modal-lg" style="max-width:600px;max-height:90vh;overflow-y:auto">
+    <div class="modal-t" id="inv-modal-title">🧾 Nouvelle facture</div>
+    <input type="hidden" id="edit-inv-key">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">👤 Client</div>
+        <div class="fg"><div class="fl">Nom / Société</div><input class="fi" id="inv-client-name" placeholder="Prénom Nom ou Société"></div>
+        <div class="fg"><div class="fl">Email</div><input class="fi" id="inv-client-email" placeholder="client@email.com" type="email"></div>
+        <div class="fg"><div class="fl">Téléphone</div><input class="fi" id="inv-client-phone" placeholder="06 12 34 56 78" type="tel"></div>
+        <div class="fg"><div class="fl">Adresse</div><textarea class="fi" id="inv-client-addr" rows="2" placeholder="Rue, Code postal, Ville" style="resize:none"></textarea></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📋 Facture</div>
+        <div class="fg"><div class="fl">Date</div><input class="fi" type="date" id="inv-date"></div>
+        <div class="fg"><div class="fl">Échéance</div><input class="fi" type="date" id="inv-due"></div>
+        <div class="fg"><div class="fl">TVA (%)</div><input class="fi" type="number" id="inv-tva" placeholder="0" value="0" min="0" max="100" oninput="calcInvTotal()"></div>
+        <div class="fg"><div class="fl">Statut</div>
+          <select class="fi" id="inv-status">
+            <option value="Brouillon">📝 Brouillon</option>
+            <option value="Envoyée">📤 Envoyée</option>
+            <option value="Payée">✅ Payée</option>
+          </select>
+        </div>
+        <div class="fg"><div class="fl">Note / Conditions</div><input class="fi" id="inv-note" placeholder="ex: Paiement sous 14 jours…"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">📦 Articles</div>
+        <button class="btn" style="font-size:11px;padding:5px 10px" onclick="addInvItem()">+ Ligne</button>
+      </div>
+      <div id="inv-items-list"></div>
+      <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-top:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:5px">
+          <span>Total HT</span><span id="inv-ht">0,00 €</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:5px">
+          <span>TVA (<span id="inv-tva-pct">0</span>%)</span><span id="inv-tva-amt">0,00 €</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:16px;font-family:'Syne',sans-serif;color:var(--txt);border-top:1px solid var(--bd);padding-top:8px;margin-top:4px">
+          <span>Total TTC</span><span style="color:var(--or)" id="inv-ttc">0,00 €</span>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="mb" onclick="closeInvModal()">Annuler</button>
+      <button class="mb" style="background:var(--bl);color:#fff;border:none" onclick="saveInvoice(true)">🖨 Sauver + PDF</button>
+      <button class="mb c" onclick="saveInvoice(false)">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Suppression vente -->
 <div class="ov" id="del-sale-ov">
   <div class="modal">
@@ -1234,6 +1316,18 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
     <div class="mf">
       <button class="mb" onclick="closeDelSale()">Annuler</button>
       <button class="mb danger" onclick="confirmDelSale()">🗑 Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm générique -->
+<div class="ov" id="confirm-ov">
+  <div class="modal">
+    <div class="modal-t" id="confirm-title">Confirmer</div>
+    <div style="font-size:13px;color:var(--txt2);margin-bottom:4px" id="confirm-msg"></div>
+    <div class="mf">
+      <button class="mb" onclick="closeConfirm()">Annuler</button>
+      <button class="mb danger" id="confirm-ok-btn" onclick="doConfirm()">Confirmer</button>
     </div>
   </div>
 </div>
@@ -1287,8 +1381,12 @@ window.startListeners=function(){
     if(snap.exists()){const o=snap.val();window._CCO=Object.values(o);window._CCOK=Object.keys(o);}else{window._CCO=[];window._CCOK=[];}
     refreshPage();syncUI('ok');
   },()=>syncUI('err'));
-  onValue(ref(db,'repairs'),snap=>{
+  oonValue(ref(db,'repairs'),snap=>{
     if(snap.exists()){const o=snap.val();window._REP=Object.values(o);window._REPK=Object.keys(o);}else{window._REP=[];window._REPK=[];}
+    refreshPage();syncUI('ok');
+  },()=>syncUI('err'));
+  onValue(ref(db,'invoices'),snap=>{
+    if(snap.exists()){const o=snap.val();window._INV=Object.values(o);window._INVK=Object.keys(o);window._INVNUM=Math.max(...window._INV.map(i=>i.num||0),0)+1;}else{window._INV=[];window._INVK=[];window._INVNUM=1;}
     refreshPage();syncUI('ok');
   },()=>syncUI('err'));
   onValue(ref(db,'profiles2'),snap=>{
@@ -1297,7 +1395,13 @@ window.startListeners=function(){
   },()=>syncUI('err'));
 };
 
+let _firstLoad=false;
 function refreshPage(){
+  if(!_firstLoad){
+    _firstLoad=true;
+    const ov=document.getElementById('loading-overlay');
+    if(ov)ov.style.display='none';
+  }
   const ap=document.querySelector('.page.active');
   if(!ap)return;
   const id=ap.id;
@@ -1310,6 +1414,7 @@ function refreshPage(){
   else if(id==='p-cc')renderCC();
   else if(id==='p-cc-admin')renderCCAdmin();
   else if(id==='p-rep')renderRepairs();
+  else if(id==='p-factures')renderFactures();
   else if(id==='p-profils')renderProfiles();
 }
 
@@ -1330,6 +1435,9 @@ window.fbUpdateCCOrder=(k,v)=>fbUpdate('cc_orders/'+k,v);
 window.fbSaveRepair=r=>fbPush('repairs',r);
 window.fbUpdateRepair=(k,v)=>fbUpdate('repairs/'+k,v);
 window.fbDeleteRepair=k=>fbRemove('repairs/'+k);
+window.fbSaveInvoice=i=>fbPush('invoices',i);
+window.fbUpdateInvoice=(k,v)=>fbUpdate('invoices/'+k,v);
+window.fbDeleteInvoice=k=>fbRemove('invoices/'+k);
 window.fbSaveProfiles=p=>fbSet('profiles2',p);
 
 console.log('Firebase v3 ✓');
@@ -1382,6 +1490,7 @@ window._O=[];window._OK=[];
 window._D=[];window._DK=[];
 window._CCO=[];window._CCOK=[];
 window._REP=[];window._REPK=[];
+window._INV=[];window._INVK=[];window._INVNUM=1;
 
 // Profils par défaut
 window._PROFILES={
@@ -1409,6 +1518,19 @@ function showToast(msg,color,icon){
 function ok(msg){showToast(msg,'var(--g)');}
 function warn(msg){showToast(msg,'var(--or)');}
 function err(msg){showToast(msg,'var(--r)');}
+
+let _confirmCb=null;
+function showConfirm(title,msg,cb,label='Supprimer'){
+  _confirmCb=cb;
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-ok-btn').textContent=label;
+  document.getElementById('confirm-ov').classList.add('open');
+}
+function closeConfirm(){document.getElementById('confirm-ov').classList.remove('open');_confirmCb=null;}
+function doConfirm(){if(_confirmCb)_confirmCb();closeConfirm();}
+   
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 
 // ════════════════════════════════════════
 // THÈME
@@ -1568,6 +1690,8 @@ function doLogin(){
   const ma=document.getElementById('main-app');
   ma.style.display='flex';ma.style.flexDirection='column';
   document.getElementById('u-name').textContent=_currentUser.name;
+  const ov=document.getElementById('loading-overlay');
+  ov.style.display='flex';
   buildNav();
   if(window.startListeners)window.startListeners();
   goPage(_currentUser.role==='vendeur'?'caisse':'dash');
@@ -1585,10 +1709,10 @@ function logout(){
 const PAGE_LABELS={
   dash:'📊 Tableau de bord',caisse:'🛒 Caisse',stock:'📦 Stock',
   cmd:'📋 Commandes',ded:'➖ Déductions',histo:'🕐 Historique',
-  'cc-admin':'🛍 Click & Collect',rep:'🔧 Réparations',calc:'🧮 Calculatrice',profils:'👥 Profils'
+  'cc-admin':'🛍 Click & Collect',rep:'🔧 Réparations',factures:'🧾 Factures',calc:'🧮 Calculatrice',profils:'👥 Profils'
 };
-const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','calc','profils'];
-const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','calc'];
+const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','profils'];
+const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc'];
 const VENDEUR_PAGES=['caisse','stock','calc'];
 
 function buildNav(){
@@ -1602,8 +1726,7 @@ function goPage(id){
   const bel=document.getElementById('nb-'+id);
   if(pel)pel.classList.add('active');
   if(bel)bel.classList.add('active');
-  const map={dash:renderDash,caisse:renderCaisse,stock:renderStock,cmd:renderOrders,ded:renderDed,histo:renderHisto,'cc-admin':renderCCAdmin,rep:renderRepairs,profils:renderProfiles};
-  if(map[id])map[id]();
+const map={dash:renderDash,caisse:renderCaisse,stock:renderStock,cmd:renderOrders,ded:renderDed,histo:renderHisto,'cc-admin':renderCCAdmin,rep:renderRepairs,factures:renderFactures,profils:renderProfiles};  if(map[id])map[id]();
 }
 
 // ════════════════════════════════════════
@@ -1670,8 +1793,8 @@ function renderDash(){
   const rec=[...ts].sort((a,b)=>b.ts-a.ts).slice(0,5);
   ds.innerHTML=rec.length?rec.map(s=>`
     <div class="row">
-      <div><div style="font-size:12px;font-weight:500">${s.label}</div>
-      <div style="font-size:10px;color:var(--txt2)">${new Date(s.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${s.seller} · <span style="color:${s.payMode==='carte'?'var(--bl)':'var(--g)'};font-weight:600">${s.payMode==='carte'?'💳':'💵'}</span></div></div>
+     <div style="font-size:12px;font-weight:500">${esc(s.label)}</div>
+      <div style="font-size:10px;color:var(--txt2)">${new Date(s.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${esc(s.seller)} · <span style="color:${s.payMode==='carte'?'var(--bl)':'var(--g)'};font-weight:600">${s.payMode==='carte'?'💳':'💵'}</span></div>
       <span style="color:var(--or);font-weight:700;font-size:13px;font-family:'Syne',sans-serif">${fmt(s.total)}</span>
     </div>`).join(''):'<div class="empty">Aucune vente</div>';
 
@@ -1809,11 +1932,11 @@ async function updStock(id,v){
   const p=window._P.find(x=>x.id===id);
   if(p){p.stock=Math.max(0,parseInt(v)||0);await window.fbSaveProducts();}
 }
-async function delProd(id){
-  if(confirm('Supprimer ce produit ?')){
+function delProd(id){
+  showConfirm('🗑 Supprimer ce produit ?','Cette action est irréversible.',async()=>{
     window._P=window._P.filter(p=>p.id!==id);
     await window.fbSaveProducts();renderStock();ok('Produit supprimé');
-  }
+  });
 }
 function openAddModal(){
   document.getElementById('add-modal-title').textContent='➕ Ajouter un produit';
@@ -1903,11 +2026,12 @@ async function addCategory(){
   window._CATS.push(v);await window.fbSaveProducts();
   document.getElementById('new-cat-inp').value='';renderCatManage();ok('Catégorie ajoutée');
 }
-async function deleteCat(i){
-  if(window._P.some(p=>p.cat===window._CATS[i])&&!confirm('Des produits utilisent cette catégorie. Continuer ?'))return;
-  window._CATS.splice(i,1);await window.fbSaveProducts();renderCatManage();ok('Catégorie supprimée');
+function deleteCat(i){
+  const msg=window._P.some(p=>p.cat===window._CATS[i])?'Des produits utilisent cette catégorie. Continuer ?':'Cette action est irréversible.';
+  showConfirm('🗑 Supprimer cette catégorie ?',msg,async()=>{
+    window._CATS.splice(i,1);await window.fbSaveProducts();renderCatManage();ok('Catégorie supprimée');
+  });
 }
-
 function preOrder(id){
   goPage('cmd');
   const p=window._P.find(x=>x.id===id);
@@ -1983,8 +2107,8 @@ function renderDed(){
     const canDel=_currentUser&&_currentUser.role!=='vendeur';
     return `<div class="ded-item">
       <div style="flex:1">
-        <div class="ded-item-label">${typeIcons[d.type]||'📝'} ${d.desc||d.type}</div>
-        <div class="ded-item-meta">${d.who} · ${new Date(d.ts).toLocaleDateString('fr-FR')} · <span class="badge bw">${d.type}</span></div>
+      <div class="ded-item-label">${typeIcons[d.type]||'📝'} ${esc(d.desc||d.type)}</div>
+        <div class="ded-item-meta">${esc(d.who)} · ${new Date(d.ts).toLocaleDateString('fr-FR')} · <span class="badge bw">${esc(d.type)}</span></div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div class="ded-amount">−${fmt(d.amount)}</div>
@@ -2007,9 +2131,10 @@ async function addDeduction(){
   document.getElementById('ded-amount').value='';document.getElementById('ded-desc').value='';
   ok('✓ Déduction enregistrée');
 }
-async function deleteDed(key){
-  if(!confirm('Supprimer cette déduction ?'))return;
-  await window.fbDeleteDed(key);ok('Déduction supprimée');
+function deleteDed(key){
+  showConfirm('🗑 Supprimer cette déduction ?','Cette action est irréversible.',async()=>{
+    await window.fbDeleteDed(key);ok('Déduction supprimée');
+  });
 }
 
 // ════════════════════════════════════════
@@ -2021,22 +2146,26 @@ function renderHisto(){
   if(f==='today')list=window._S.filter(s=>s.date===today());
   else if(f==='week')list=weekSales();
   const rev=[...list].sort((a,b)=>b.ts-a.ts);
-  const keyMap={};
-  window._SK.forEach((k,i)=>{if(window._S[i])keyMap[window._S[i].ts+'|'+window._S[i].total]=k;});
+  const keyMap=new Map();
+window._S.forEach((s,i)=>keyMap.set(s,window._SK[i]));
 
   document.getElementById('h-tbody').innerHTML=rev.length?rev.map(s=>{
-    const key=keyMap[s.ts+'|'+s.total]||null;
+    const key=keyMap.get(s)||null;
     const mc=s.payMode==='carte'?'var(--bl)':'var(--g)';
     const ml=s.payMode==='carte'?'💳 Carte':'💵 Espèces';
     const canDel=_currentUser&&_currentUser.role!=='vendeur'&&key;
+    const sIdx=window._S.indexOf(s);
     return `<tr>
       <td style="font-size:11px">${new Date(s.ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
-      <td style="font-size:12px">${s.label}</td>
+      <td style="font-size:12px">${esc(s.label)}</td>
       <td><span style="font-size:11px;color:${mc};font-weight:600">${ml}</span></td>
-      <td style="font-size:11px;color:var(--txt2)">${s.note||'—'}</td>
-      <td style="font-size:11px;color:var(--txt2)">${s.seller||'—'}</td>
+      <td style="font-size:11px;color:var(--txt2)">${esc(s.note)||'—'}</td>
+      <td style="font-size:11px;color:var(--txt2)">${esc(s.seller)||'—'}</td>
       <td style="color:var(--or);font-weight:700;font-family:'Syne',sans-serif">${fmt(s.total)}</td>
-      <td>${canDel?`<button class="abt" onclick="openDelSale('${key}','${s.label}',${s.total})" style="color:var(--r);border-color:var(--r)">🗑</button>`:'—'}</td>
+      <td><div style="display:flex;gap:4px;align-items:center">
+        <button class="abt" onclick="invoiceFromSale(${sIdx})" style="color:var(--or);border-color:var(--or)" title="Créer facture">🧾</button>
+        ${canDel?`<button class="abt" onclick="openDelSale('${key}','${s.label}',${s.total})" style="color:var(--r);border-color:var(--r)">🗑</button>`:''}
+      </div></td>
     </tr>`;
   }).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--txt2)">Aucune vente</td></tr>';
 
@@ -2190,11 +2319,11 @@ function renderCCOrders(){
     const sc={En_attente:'cc-status-waiting',Prête:'cc-status-ready',Récupérée:'cc-status-done'}[o.status?.replace(' ','_')]||'cc-status-waiting';
     return `<div class="cc-order-item">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="font-size:13px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt)">${o.client}</div>
-        <span class="cc-order-status ${sc}">${o.status}</span>
+        <div style="font-size:13px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt)">${esc(r.client)}</div>
+        <span class="rep-status ${sc}">${esc(r.status)}</span>
       </div>
-      <div style="font-size:11px;color:var(--txt2);margin-bottom:4px">${o.phone} · ${new Date(o.ts).toLocaleDateString('fr-FR')}</div>
-      <div style="font-size:11px;color:var(--txt2);margin-bottom:6px">${(o.items||[]).map(it=>it.name+'×'+it.qty).join(', ')}</div>
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:3px">📱 ${esc(r.device)} · ${esc(r.phone)}</div>
+      <div style="font-size:12px;color:var(--txt);margin-bottom:6px">${esc(r.issue)}</div>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span style="font-weight:700;color:var(--g);font-family:'Syne',sans-serif">${fmt(o.total)}</span>
         <div style="display:flex;gap:5px">
@@ -2293,10 +2422,10 @@ function renderCCAdmin(){
     return `<div class="card" style="border-left:4px solid ${isWaiting?'var(--or)':isReady?'var(--bl)':isDone?'var(--g)':'var(--r)'}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap">
         <div>
-          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--txt)">${o.client||'—'}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--txt)">${esc(o.client)||'—'}</div>
           <div style="font-size:12px;color:var(--txt2);margin-top:2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span>📞 ${o.phone||'—'}</span>
-            ${o.email?`<span>✉️ ${o.email}</span>`:''}
+            <span>📞 ${esc(o.phone)||'—'}</span>
+            ${o.email?`<span>✉️ ${esc(o.email)}</span>`:''}
             <span>🕐 ${date}</span>
           </div>
         </div>
@@ -2312,18 +2441,17 @@ function renderCCAdmin(){
           <span style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--or)">${fmt(o.total||0)}</span>
         </div>
       </div>
-      ${o.msg?`<div style="font-size:12px;color:var(--txt2);background:var(--bl2);border-radius:8px;padding:8px 10px;font-style:italic">💬 ${o.msg}</div>`:''}
+      ${o.msg?`<div style="font-size:12px;color:var(--txt2);background:var(--bl2);border-radius:8px;padding:8px 10px;font-style:italic">💬 ${esc(o.msg)}</div>`:''}
       ${actions}
     </div>`;
   }).join('')+`</div>`;
 }
 
 async function ccAdminAction(key,status){
-  const labels={Prête:'Prête',Récupérée:'Récupérée',Annulée:'Annulée'};
-  if(status==='Annulée'&&!confirm('Annuler cette commande ?'))return;
-  await window.fbUpdateCCOrder(key,{status});
-  ok(status==='Prête'?'✅ Commande marquée Prête':status==='Récupérée'?'📦 Commande récupérée':'❌ Commande annulée');
-}
+  const doIt=async()=>{await window.fbUpdateCCOrder(key,{status});
+    ok(status==='Prête'?'✅ Commande marquée Prête':status==='Récupérée'?'📦 Commande récupérée':'❌ Commande annulée');};
+  if(status==='Annulée'){showConfirm('❌ Annuler cette commande ?','Cette action est irréversible.',doIt,'Annuler la commande');return;}
+  await doIt();
 
 function exportCCPDF(){
   const all=[...window._CCO].sort((a,b)=>b.ts-a.ts);
@@ -2400,7 +2528,8 @@ function renderRepairs(){
         <div style="display:flex;align-items:center;gap:8px">
           ${r.price?`<span style="font-weight:700;color:var(--or);font-family:'Syne',sans-serif">${fmt(r.price)}</span>`:''}
           <div style="display:flex;gap:4px">
-            ${key?`<button class="abt ed" onclick="openEditRepair('${key}')">Éditer</button>
+           ${key?`<button class="abt" onclick="invoiceFromRepair('${key}')" style="color:var(--or);border-color:var(--or)" title="Créer facture">🧾</button>
+            <button class="abt ed" onclick="openEditRepair('${key}')">Éditer</button>
             <button class="abt" onclick="deleteRepair('${key}')" style="color:var(--r);border-color:var(--r)">✕</button>`:''}
           </div>
         </div>
@@ -2448,9 +2577,10 @@ async function saveRepair(){
   else{await window.fbSaveRepair(data);ok('Fiche créée ✓');}
   closeRepairModal();
 }
-async function deleteRepair(key){
-  if(!confirm('Supprimer cette fiche ?'))return;
-  await window.fbDeleteRepair(key);ok('Fiche supprimée');
+function deleteRepair(key){
+  showConfirm('🗑 Supprimer cette fiche ?','Cette action est irréversible.',async()=>{
+    await window.fbDeleteRepair(key);ok('Fiche supprimée');
+  });
 }
 
 // IMEI
@@ -2523,6 +2653,305 @@ function searchPieces(){
     </div>
     <div style="font-size:10px;color:var(--txt3);margin-top:6px">💡 Astuce : comparez les prix sur plusieurs sites pour trouver la meilleure offre</div>
   `;
+}
+
+// ════════════════════════════════════════
+// FACTURES
+// ════════════════════════════════════════
+let _invItems=[];
+
+function invNumStr(n){
+  return 'FAC-'+new Date().getFullYear()+'-'+String(n).padStart(4,'0');
+}
+
+function renderFactures(){
+  const f=document.getElementById('inv-filter').value;
+  const list=f==='all'?window._INV:window._INV.filter(i=>i.status===f);
+  const sorted=[...list].sort((a,b)=>b.ts-a.ts);
+  document.getElementById('invk-total').textContent=window._INV.length;
+  document.getElementById('invk-wait').textContent=window._INV.filter(i=>i.status==='Brouillon'||i.status==='Envoyée').length;
+  document.getElementById('invk-paid').textContent=window._INV.filter(i=>i.status==='Payée').length;
+  document.getElementById('invk-ca').textContent=fmt(window._INV.reduce((a,i)=>a+(i.totalTTC||0),0));
+  const el=document.getElementById('inv-list');
+  if(!sorted.length){el.innerHTML='<div class="empty">Aucune facture — crée-en une depuis l\'historique 🧾 ou le bouton ci-dessus</div>';return;}
+  const scfg={Brouillon:{cls:'bw',icon:'📝',border:'var(--bd)'},Envoyée:{cls:'bb',icon:'📤',border:'var(--bl)'},Payée:{cls:'bg',icon:'✅',border:'var(--g)'}};
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:10px">'+sorted.map(inv=>{
+    const key=window._INVK[window._INV.indexOf(inv)]||null;
+    const cfg=scfg[inv.status]||scfg.Brouillon;
+    const due=inv.dueDate?new Date(inv.dueDate+'T12:00:00'):null;
+    const overdue=due&&due<new Date()&&inv.status!=='Payée';
+    return `<div class="card" style="border-left:4px solid ${cfg.border}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--txt)">${esc(invNumStr(inv.num||1))}
+            <span style="font-size:12px;font-weight:400;color:var(--txt2)">· ${esc(inv.client?.name||'—')}</span>
+          </div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:3px">
+            📅 ${new Date(inv.ts).toLocaleDateString('fr-FR')}
+            ${due?' · Échéance : <span style="color:'+(overdue?'var(--r)':'var(--txt2)')+'">'+due.toLocaleDateString('fr-FR')+'</span>':''}
+            ${overdue?' <span class="badge br">En retard</span>':''}
+          </div>
+          ${inv.client?.email||inv.client?.phone?`<div style="font-size:11px;color:var(--txt2);margin-top:2px">${inv.client.phone?'📞 '+esc(inv.client.phone):''}${inv.client.email?' · ✉️ '+esc(inv.client.email):''}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <span style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--or)">${fmt(inv.totalTTC||0)}</span>
+          <span class="badge ${cfg.cls}">${cfg.icon} ${inv.status}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);flex-wrap:wrap">
+        <button class="btn" style="font-size:11px;padding:6px 11px" onclick="printInvoice('${key}')">🖨 PDF</button>
+        <button class="btn btn-or" style="font-size:11px;padding:6px 11px" onclick="openEditInvoice('${key}')">✏️ Modifier</button>
+        ${inv.status!=='Payée'?`<button class="btn btn-g" style="font-size:11px;padding:6px 11px" onclick="markInvoicePaid('${key}')">✅ Payée</button>`:''}
+        <button class="btn btn-r" style="font-size:11px;padding:6px 11px;margin-left:auto" onclick="deleteInvoice('${key}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function openNewInvoice(prefill){
+  document.getElementById('inv-modal-title').textContent='🧾 Nouvelle facture';
+  document.getElementById('edit-inv-key').value='';
+  document.getElementById('inv-client-name').value=prefill?.clientName||'';
+  document.getElementById('inv-client-email').value=prefill?.clientEmail||'';
+  document.getElementById('inv-client-phone').value=prefill?.clientPhone||'';
+  document.getElementById('inv-client-addr').value=prefill?.clientAddr||'';
+  document.getElementById('inv-date').value=today();
+  const due=new Date();due.setDate(due.getDate()+14);
+  document.getElementById('inv-due').value=due.toISOString().slice(0,10);
+  document.getElementById('inv-tva').value='0';
+  document.getElementById('inv-status').value='Brouillon';
+  document.getElementById('inv-note').value=prefill?.note||'Paiement sous 14 jours.';
+  _invItems=prefill?.items||[{name:'',qty:1,unitPrice:0}];
+  renderInvItems();calcInvTotal();
+  document.getElementById('inv-ov').classList.add('open');
+}
+
+function openEditInvoice(key){
+  const idx=window._INVK.indexOf(key);
+  const inv=window._INV[idx];if(!inv)return;
+  document.getElementById('inv-modal-title').textContent='✏️ Modifier la facture';
+  document.getElementById('edit-inv-key').value=key;
+  document.getElementById('inv-client-name').value=inv.client?.name||'';
+  document.getElementById('inv-client-email').value=inv.client?.email||'';
+  document.getElementById('inv-client-phone').value=inv.client?.phone||'';
+  document.getElementById('inv-client-addr').value=inv.client?.addr||'';
+  document.getElementById('inv-date').value=inv.date||today();
+  document.getElementById('inv-due').value=inv.dueDate||'';
+  document.getElementById('inv-tva').value=inv.tva||0;
+  document.getElementById('inv-status').value=inv.status||'Brouillon';
+  document.getElementById('inv-note').value=inv.note||'';
+  _invItems=(inv.items||[]).map(i=>({...i}));
+  if(!_invItems.length)_invItems=[{name:'',qty:1,unitPrice:0}];
+  renderInvItems();calcInvTotal();
+  document.getElementById('inv-ov').classList.add('open');
+}
+
+function closeInvModal(){document.getElementById('inv-ov').classList.remove('open');}
+
+function renderInvItems(){
+  document.getElementById('inv-items-list').innerHTML=_invItems.map((it,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 64px 88px 72px 26px;gap:5px;margin-bottom:5px;align-items:center">
+      <input class="fi" placeholder="Description…" value="${esc(it.name)}"
+        oninput="_invItems[${i}].name=this.value"
+        style="font-size:12px;padding:6px 8px">
+      <input class="fi" type="number" placeholder="Qté" value="${it.qty}" min="1"
+        oninput="_invItems[${i}].qty=parseFloat(this.value)||1;calcInvTotal()"
+        style="font-size:12px;padding:6px 8px;text-align:center">
+      <input class="fi" type="number" placeholder="P.U. €" value="${it.unitPrice}" min="0" step="0.01"
+        oninput="_invItems[${i}].unitPrice=parseFloat(this.value)||0;calcInvTotal()"
+        style="font-size:12px;padding:6px 8px;text-align:right">
+      <div style="font-size:12px;font-weight:700;color:var(--or);font-family:'Syne',sans-serif;text-align:right">
+        ${fmt((it.qty||1)*(it.unitPrice||0))}
+      </div>
+      <button onclick="removeInvItem(${i})"
+        style="width:24px;height:24px;border-radius:6px;border:1px solid var(--r);background:var(--r2);cursor:pointer;color:var(--r);font-size:14px;display:flex;align-items:center;justify-content:center;font-weight:700">×</button>
+    </div>`).join('')||'<div class="empty" style="font-size:12px">Aucun article — clique sur + Ligne</div>';
+}
+
+function addInvItem(){_invItems.push({name:'',qty:1,unitPrice:0});renderInvItems();calcInvTotal();}
+function removeInvItem(i){_invItems.splice(i,1);renderInvItems();calcInvTotal();}
+
+function calcInvTotal(){
+  const ht=_invItems.reduce((a,it)=>a+(it.qty||1)*(it.unitPrice||0),0);
+  const tvaRate=parseFloat(document.getElementById('inv-tva')?.value)||0;
+  const tvaAmt=ht*tvaRate/100;
+  const ttc=ht+tvaAmt;
+  document.getElementById('inv-ht').textContent=fmt(ht);
+  document.getElementById('inv-tva-pct').textContent=tvaRate;
+  document.getElementById('inv-tva-amt').textContent=fmt(tvaAmt);
+  document.getElementById('inv-ttc').textContent=fmt(ttc);
+}
+
+async function saveInvoice(preview){
+  const clientName=document.getElementById('inv-client-name').value.trim();
+  if(!clientName){warn('Nom client requis');return;}
+  const validItems=_invItems.filter(it=>it.name.trim());
+  if(!validItems.length){warn('Au moins un article requis');return;}
+  const tvaRate=parseFloat(document.getElementById('inv-tva').value)||0;
+  const ht=validItems.reduce((a,it)=>a+(it.qty||1)*(it.unitPrice||0),0);
+  const tvaAmt=ht*tvaRate/100;
+  const ttc=ht+tvaAmt;
+  const editKey=document.getElementById('edit-inv-key').value;
+  const existingInv=editKey?window._INV[window._INVK.indexOf(editKey)]:null;
+  const inv={
+    num:existingInv?.num||window._INVNUM,
+    ts:existingInv?.ts||Date.now(),
+    date:document.getElementById('inv-date').value,
+    dueDate:document.getElementById('inv-due').value,
+    client:{
+      name:clientName,
+      email:document.getElementById('inv-client-email').value,
+      phone:document.getElementById('inv-client-phone').value,
+      addr:document.getElementById('inv-client-addr').value
+    },
+    items:validItems,
+    tva:tvaRate,totalHT:ht,totalTVA:tvaAmt,totalTTC:ttc,
+    status:document.getElementById('inv-status').value,
+    note:document.getElementById('inv-note').value,
+    by:_currentUser.name
+  };
+  if(editKey){await window.fbUpdateInvoice(editKey,inv);ok('Facture modifiée ✓');}
+  else{await window.fbSaveInvoice(inv);ok('✓ Facture '+invNumStr(inv.num)+' créée !');}
+  closeInvModal();
+  if(preview)printInvoiceData(inv);
+}
+
+async function markInvoicePaid(key){
+  await window.fbUpdateInvoice(key,{status:'Payée'});ok('✅ Facture marquée payée !');
+}
+
+function deleteInvoice(key){
+  showConfirm('🗑 Supprimer cette facture ?','Cette action est irréversible.',async()=>{
+    await window.fbDeleteInvoice(key);ok('Facture supprimée');
+  });
+}
+
+function printInvoice(key){
+  const idx=window._INVK.indexOf(key);
+  const inv=window._INV[idx];if(!inv)return;
+  printInvoiceData(inv);
+}
+
+function printInvoiceData(inv){
+  const numStr=invNumStr(inv.num||1);
+  const tvaLine=inv.tva>0?`
+    <tr>
+      <td colspan="3" style="text-align:right;padding:6px 14px;color:#888;font-size:12px">TVA (${inv.tva}%)</td>
+      <td style="text-align:right;padding:6px 14px;font-weight:600">${(inv.totalTVA||0).toLocaleString('fr-FR',{minimumFractionDigits:2})} €</td>
+    </tr>`:'';
+  const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+  <title>Facture ${numStr}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;padding:48px;color:#1a1a1a;font-size:13px;background:#fff}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:24px;border-bottom:3px solid #1a1a1a}
+    .logo{font-size:36px;font-weight:900;letter-spacing:-2px;color:#1a1a1a;line-height:1}
+    .logo span{color:#E87D20}
+    .from{font-size:11px;color:#888;margin-top:8px;line-height:2}
+    .inv-num{font-size:26px;font-weight:900;color:#E87D20;letter-spacing:-0.5px}
+    .inv-dates{font-size:12px;color:#888;margin-top:8px;line-height:2;text-align:right}
+    .client-box{display:flex;justify-content:space-between;align-items:flex-start;background:#f8f7f3;border-radius:14px;padding:20px 24px;margin-bottom:32px}
+    .cl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#aaa;font-weight:700;margin-bottom:6px}
+    .cn{font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:5px}
+    .ci{font-size:12px;color:#666;line-height:2}
+    .badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:11px;font-weight:700}
+    .s-brouillon{background:#fff4e6;color:#904f0a}
+    .s-envoy-e{background:#e8f0fc;color:#1a4fa0}
+    .s-pay-e{background:#eaf7f0;color:#1a5e3a}
+    table{width:100%;border-collapse:collapse}
+    thead tr{background:#1a1a1a}
+    thead th{padding:11px 14px;color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:600;text-align:left}
+    thead th:nth-child(2),thead th:nth-child(3){text-align:center}
+    thead th:last-child{text-align:right}
+    tbody td{padding:11px 14px;border-bottom:1px solid #f0f0ec;font-size:13px;color:#1a1a1a}
+    tbody td:nth-child(2),tbody td:nth-child(3){text-align:center;color:#666}
+    tbody td:last-child{text-align:right;font-weight:700}
+    tbody tr:last-child td{border-bottom:none}
+    tfoot td{padding:8px 14px;font-size:13px}
+    .total-final td{font-size:18px;font-weight:900;padding:14px 14px;border-top:3px solid #1a1a1a}
+    .note-box{margin-top:24px;background:#f8f7f3;border-radius:10px;padding:16px 20px;font-size:12px;color:#666;line-height:1.8}
+    .note-box strong{color:#1a1a1a}
+    .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e8e7e2;display:flex;justify-content:space-between;font-size:10px;color:#bbb;letter-spacing:.3px}
+    @media print{body{padding:24px}@page{margin:1.5cm;size:A4}}
+  </style></head><body>
+  <div class="header">
+    <div>
+      <div class="logo">Kli<span>k</span>o</div>
+      <div class="from">
+        28 av. Aristide Briand · 68200 Mulhouse<br>
+        contact@kliko.fr
+      </div>
+    </div>
+    <div>
+      <div class="inv-num">${numStr}</div>
+      <div class="inv-dates">
+        Date : <strong style="color:#1a1a1a">${inv.date?new Date(inv.date+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'—'}</strong><br>
+        ${inv.dueDate?'Échéance : <strong style="color:#1a1a1a">'+new Date(inv.dueDate+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})+'</strong>':''}
+      </div>
+    </div>
+  </div>
+  <div class="client-box">
+    <div>
+      <div class="cl">Facturé à</div>
+      <div class="cn">${esc(inv.client?.name||'—')}</div>
+      <div class="ci">
+        ${inv.client?.phone?'📞 '+esc(inv.client.phone)+'<br>':''}
+        ${inv.client?.email?'✉️ '+esc(inv.client.email)+'<br>':''}
+        ${inv.client?.addr?esc(inv.client.addr).replace(/\n/g,'<br>'):''}
+      </div>
+    </div>
+    <span class="badge s-${(inv.status||'Brouillon').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s/g,'-')}">${inv.status||'Brouillon'}</span>
+  </div>
+  <table>
+    <thead>
+      <tr><th style="width:48%">Description</th><th style="width:10%">Qté</th><th style="width:18%">Prix unitaire</th><th style="width:24%">Total HT</th></tr>
+    </thead>
+    <tbody>
+      ${(inv.items||[]).map(it=>`<tr>
+        <td>${esc(it.name)}</td>
+        <td>${it.qty}</td>
+        <td>${(it.unitPrice||0).toLocaleString('fr-FR',{minimumFractionDigits:2})} €</td>
+        <td>${((it.qty||1)*(it.unitPrice||0)).toLocaleString('fr-FR',{minimumFractionDigits:2})} €</td>
+      </tr>`).join('')}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" style="text-align:right;color:#888;font-size:12px">Sous-total HT</td>
+        <td style="text-align:right;font-weight:600">${(inv.totalHT||0).toLocaleString('fr-FR',{minimumFractionDigits:2})} €</td>
+      </tr>
+      ${tvaLine}
+      <tr class="total-final">
+        <td colspan="3" style="text-align:right;font-size:15px;font-weight:700">TOTAL TTC</td>
+        <td style="text-align:right;color:#E87D20">${(inv.totalTTC||0).toLocaleString('fr-FR',{minimumFractionDigits:2})} €</td>
+      </tr>
+    </tfoot>
+  </table>
+  ${inv.note?`<div class="note-box"><strong>📌 Note :</strong> ${esc(inv.note)}</div>`:''}
+  <div class="footer">
+    <span>Kliko · 28 av. Aristide Briand · 68200 Mulhouse</span>
+    <span>Généré le ${new Date().toLocaleDateString('fr-FR')} · ${esc(inv.by||'—')}</span>
+  </div>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+function invoiceFromSale(sIdx){
+  const s=window._S[sIdx];if(!s)return;
+  openNewInvoice({
+    items:(s.items||[]).map(it=>({name:it.name,qty:it.qty,unitPrice:it.price})),
+    note:'Vente du '+new Date(s.ts).toLocaleDateString('fr-FR')+'. Paiement sous 14 jours.'
+  });
+}
+
+function invoiceFromRepair(key){
+  const idx=window._REPK.indexOf(key);
+  const r=window._REP[idx];if(!r)return;
+  openNewInvoice({
+    clientName:r.client,clientPhone:r.phone,
+    items:[{name:'Réparation '+esc(r.device)+' — '+esc(r.issue),qty:1,unitPrice:r.price||0}],
+    note:'Fiche réparation · '+esc(r.device)+'. Paiement sous 14 jours.'
+  });
 }
 
 // ════════════════════════════════════════
@@ -2650,12 +3079,13 @@ async function saveProfile(){
   ok('✓ Profil '+((_editProfileId)?'modifié':'créé')+' !');
 }
 
-async function deleteProfile(id){
+function deleteProfile(id){
   if(id===_currentUser?.id){warn('Impossible de supprimer votre propre profil');return;}
-  if(!confirm('Supprimer ce profil ?'))return;
-  delete window._PROFILES[id];
-  await window.fbSaveProfiles(window._PROFILES);
-  renderProfiles();renderUserCards();ok('Profil supprimé');
+  showConfirm('🗑 Supprimer ce profil ?','Cette action est irréversible.',async()=>{
+    delete window._PROFILES[id];
+    await window.fbSaveProfiles(window._PROFILES);
+    renderProfiles();renderUserCards();ok('Profil supprimé');
+  });
 }
 
 // ════════════════════════════════════════
