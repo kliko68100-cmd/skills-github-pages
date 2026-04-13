@@ -1884,9 +1884,10 @@ async function doSale(){
   const note=document.getElementById('t-note').value;
   _ticket.forEach(t=>{const p=window._P.find(x=>x.id===t.id);if(p&&p.cat!=='Café')p.stock=Math.max(0,p.stock-t.qty);});
   const sale={ts:Date.now(),date:today(),label,total,note,seller:_currentUser.name,payMode:_payMode,items:_ticket.map(t=>({...t}))};
-  await window.fbSaveProducts();
-  await window.fbSaveSale(sale);
+  // Affichage immédiat — pas besoin d'attendre Firebase
   showReceipt(sale);clearTicket();renderCaisse();
+  // Les 2 écritures Firebase tournent en parallèle en arrière-plan
+  Promise.all([window.fbSaveProducts(),window.fbSaveSale(sale)]);
 }
 function showReceipt(sale){
   document.getElementById('r-date').textContent=new Date(sale.ts).toLocaleString('fr-FR');
