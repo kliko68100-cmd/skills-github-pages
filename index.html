@@ -443,7 +443,154 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
 .ded-item-label{font-size:13px;font-weight:600;color:var(--txt);font-family:'Syne',sans-serif}
 .ded-item-meta{font-size:11px;color:var(--txt2);margin-top:2px}
 .ded-amount{font-size:15px;font-weight:700;color:var(--r);font-family:'Syne',sans-serif}
+// ════════════════════════════════════════
+// FIDÉLITÉ CLIENTS
+// ════════════════════════════════════════
+window._CLI=[];window._CLIK=[];
 
+// Firebase listeners — à ajouter dans startListeners()
+// (voir note ci-dessous)
+
+function clientTier(pts){
+  if(pts>=500)return{label:'🥇 Gold',cls:'bw',color:'var(--or)'};
+  if(pts>=200)return{label:'🥈 Silver',cls:'bb',color:'var(--bl)'};
+  return{label:'🥉 Bronze',cls:'bg',color:'var(--g)'};
+}
+
+function renderFidelite(filter=''){
+  const f=(filter||document.getElementById('fid-search')?.value||'').toLowerCase();
+  const list=f?window._CLI.filter(c=>(c.name||'').toLowerCase().includes(f)||(c.phone||'').includes(f)):window._CLI;
+  const sorted=[...list].sort((a,b)=>(b.points||0)-(a.points||0));
+
+  document.getElementById('fidk-total').textContent=window._CLI.length;
+  document.getElementById('fidk-pts').textContent=window._CLI.reduce((a,c)=>a+(c.points||0),0);
+  document.getElementById('fidk-gold').textContent=window._CLI.filter(c=>(c.points||0)>=500).length;
+  document.getElementById('fidk-ca').textContent=fmt(window._CLI.reduce((a,c)=>a+(c.totalSpent||0),0));
+
+  const el=document.getElementById('fid-list');
+  if(!sorted.length){el.innerHTML='<div class="empty">Aucun client enregistré</div>';return;}
+
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">'+sorted.map(c=>{
+    const key=window._CLIK[window._CLI.indexOf(c)]||null;
+    const tier=clientTier(c.points||0);
+    const lastBuy=c.lastPurchase?new Date(c.lastPurchase).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    return `<div class="card" style="cursor:pointer" onclick="showClientDetail('${key}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:50%;background:${tier.color}22;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:${tier.color};flex-shrink:0;font-family:'Syne',sans-serif">
+          ${(c.name||'?').substring(0,2).toUpperCase()}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--txt);font-family:'Syne',sans-serif">${esc(c.name)}</div>
+          <div style="font-size:11px;color:var(--txt2)">${esc(c.phone||'—')} · Dernier achat : ${lastBuy}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;color:${tier.color};font-family:'Syne',sans-serif">${c.points||0} pts</div>
+          <span class="badge ${tier.cls}" style="font-size:10px">${tier.label}</span>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button class="abt ed" onclick="event.stopPropagation();openEditClient('${key}')" title="Modifier">✏️</button>
+          <button class="abt" onclick="event.stopPropagation();deleteClient('${key}')" style="color:var(--r);border-color:var(--r)" title="Supprimer">✕</button>
+        </div>
+      </div>
+      ${c.note?`<div style="font-size:11px;color:var(--txt2);margin-top:6px;padding-top:6px;border-top:.5px solid var(--bd);font-style:italic">💬 ${esc(c.note)}</div>`:''}
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function filterClients(v){renderFidelite(v);}
+
+function showClientDetail(key){
+  const idx=window._CLIK.indexOf(key);
+  const c=window._CLI[idx];if(!c)return;
+  const panel=document.getElementById('fid-detail-panel');
+  const tier=clientTier(c.points||0);
+  const purchases=(c.purchases||[]).slice().reverse();
+  panel.style.display='block';
+  document.getElementById('fid-detail-content').innerHTML=`
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="width:56px;height:56px;border-radius:50%;background:${tier.color}22;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:${tier.color};margin:0 auto 8px;font-family:'Syne',sans-serif">
+        ${(c.name||'?').substring(0,2).toUpperCase()}
+      </div>
+      <div style="font-size:16px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt)">${esc(c.name)}</div>
+      <div style="font-size:12px;color:var(--txt2)">${esc(c.phone||'—')} ${c.email?'· '+esc(c.email):''}</div>
+      <span class="badge ${tier.cls==='bw'?'bw':tier.cls==='bb'?'bb':'bg'}" style="margin-top:6px;display:inline-block">${tier.label} · ${c.points||0} pts</span>
+    </div>
+    <div style="background:var(--bg2);border-radius:10px;padding:10px;margin-bottom:12px;display:flex;justify-content:space-around;text-align:center">
+      <div><div style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;color:var(--or)">${fmt(c.totalSpent||0)}</div><div style="font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">Total dépensé</div></div>
+      <div><div style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;color:var(--g)">${(c.purchases||[]).length}</div><div style="font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">Achats</div></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--txt);margin-bottom:8px;font-family:'Syne',sans-serif">🕐 Historique d'achats</div>
+    ${purchases.length?purchases.map(p=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+        <div>
+          <div style="color:var(--txt);font-weight:500">${esc(p.label||'Achat')}</div>
+          <div style="font-size:10px;color:var(--txt2)">${new Date(p.ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700;color:var(--or);font-family:'Syne',sans-serif">${fmt(p.total)}</div>
+          <div style="font-size:10px;color:var(--g)">+${Math.round(p.total)} pts</div>
+        </div>
+      </div>`).join(''):'<div class="empty" style="font-size:12px">Aucun achat lié</div>'}
+    <button class="btn btn-r" style="width:100%;margin-top:12px;font-size:12px" onclick="document.getElementById('fid-detail-panel').style.display='none'">Fermer</button>
+  `;
+}
+
+function openNewClient(){
+  document.getElementById('client-modal-title').textContent='👤 Nouveau client';
+  document.getElementById('edit-client-key').value='';
+  ['cl-name','cl-phone','cl-email','cl-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('client-ov').classList.add('open');
+}
+function openEditClient(key){
+  const idx=window._CLIK.indexOf(key);
+  const c=window._CLI[idx];if(!c)return;
+  document.getElementById('client-modal-title').textContent='✏️ Modifier '+c.name;
+  document.getElementById('edit-client-key').value=key;
+  document.getElementById('cl-name').value=c.name||'';
+  document.getElementById('cl-phone').value=c.phone||'';
+  document.getElementById('cl-email').value=c.email||'';
+  document.getElementById('cl-note').value=c.note||'';
+  document.getElementById('client-ov').classList.add('open');
+}
+function closeClientModal(){document.getElementById('client-ov').classList.remove('open');}
+
+async function saveClient(){
+  const name=document.getElementById('cl-name').value.trim();
+  if(!name){warn('Nom requis');return;}
+  const editKey=document.getElementById('edit-client-key').value;
+  if(editKey){
+    await window.fbUpdateClient(editKey,{name,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,note:document.getElementById('cl-note').value});
+    ok('Client modifié ✓');
+  } else {
+    await window.fbSaveClient({name,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,note:document.getElementById('cl-note').value,points:0,totalSpent:0,purchases:[],createdAt:Date.now()});
+    ok('✓ Client enregistré !');
+  }
+  closeClientModal();
+}
+
+function deleteClient(key){
+  showConfirm('🗑 Supprimer ce client ?','Ses points et historique seront perdus.',async()=>{
+    await window.fbDeleteClient(key);ok('Client supprimé');
+  });
+}
+
+// Associer un achat à un client depuis la caisse
+function linkSaleToClient(sale){
+  // Appelé après une vente si un client est sélectionné dans la caisse
+  const clientKey=document.getElementById('t-client-sel')?.value;
+  if(!clientKey||clientKey==='none')return;
+  const idx=window._CLIK.indexOf(clientKey);
+  const c=window._CLI[idx];if(!c)return;
+  const pts=Math.round(sale.total);
+  const purchase={ts:sale.ts,label:sale.label,total:sale.total,items:sale.items};
+  const newPurchases=[...(c.purchases||[]),purchase];
+  window.fbUpdateClient(clientKey,{
+    points:(c.points||0)+pts,
+    totalSpent:(c.totalSpent||0)+sale.total,
+    lastPurchase:sale.ts,
+    purchases:newPurchases
+  });
+}
 /* ═══════════════════════════════════════════
    CALCULATRICE (fix: indépendante du convertisseur)
 ═══════════════════════════════════════════ */
@@ -742,6 +889,11 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
       </div>
       <div class="ticket">
         <div class="t-title">🧾 Ticket <span id="t-count" style="font-size:11px;font-weight:400;color:var(--txt2)">vide</span></div>
+         <div style="margin-bottom:6px">
+  <select class="fi" id="t-client-sel" style="font-size:11px;padding:5px 8px">
+    <option value="none">👤 Client anonyme</option>
+  </select>
+</div>
         <div class="t-items" id="t-items"><div class="empty">Appuie sur un produit</div></div>
         <div class="t-sep"></div>
         <div>
@@ -1089,6 +1241,64 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
     </div>
     <div class="profiles-grid" id="profiles-grid"></div>
   </div>
+   <!-- FIDÉLITÉ -->
+<div class="page" id="p-fidelite">
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:12px;align-items:start" class="fid-wrap">
+    <div>
+      <div class="s-header">
+        <div style="font-size:15px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt)">🎁 Clients fidèles</div>
+        <div style="display:flex;gap:7px;align-items:center">
+          <input class="s-search" id="fid-search" placeholder="🔍 Rechercher client…" oninput="filterClients(this.value)">
+          <button class="btn btn-or" onclick="openNewClient()">+ Client</button>
+        </div>
+      </div>
+      <div class="kpis" style="margin-bottom:12px">
+        <div class="kpi"><span class="kpi-icon">👥</span><div class="kpi-l">Clients</div><div class="kpi-v or" id="fidk-total">0</div></div>
+        <div class="kpi"><span class="kpi-icon">⭐</span><div class="kpi-l">Points distribués</div><div class="kpi-v g" id="fidk-pts">0</div></div>
+        <div class="kpi"><span class="kpi-icon">🏆</span><div class="kpi-l">Clients Gold</div><div class="kpi-v" style="color:var(--or)" id="fidk-gold">0</div></div>
+        <div class="kpi"><span class="kpi-icon">💰</span><div class="kpi-l">CA clients</div><div class="kpi-v or" id="fidk-ca">0,00 €</div></div>
+      </div>
+      <div id="fid-list"><div class="empty">Aucun client enregistré</div></div>
+    </div>
+    <div>
+      <div class="card" id="fid-detail-panel" style="display:none;position:sticky;top:66px">
+        <div id="fid-detail-content"></div>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <div class="card-t">⚙️ Règles de points</div>
+        <div style="font-size:12px;color:var(--txt2);margin-bottom:10px">1 point par euro dépensé</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg2);border-radius:9px">
+            <span style="font-size:12px">🥉 Bronze</span><span style="font-size:11px;color:var(--txt2)">0 – 199 pts</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg2);border-radius:9px">
+            <span style="font-size:12px">🥈 Silver</span><span style="font-size:11px;color:var(--txt2)">200 – 499 pts</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg2);border-radius:9px">
+            <span style="font-size:12px;color:var(--or);font-weight:600">🥇 Gold</span><span style="font-size:11px;color:var(--txt2)">500+ pts</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--txt3);text-align:center">Les points s'accumulent automatiquement à chaque vente liée à un client</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nouveau client -->
+<div class="ov" id="client-ov">
+  <div class="modal">
+    <div class="modal-t" id="client-modal-title">👤 Nouveau client</div>
+    <input type="hidden" id="edit-client-key">
+    <div class="fg"><div class="fl">Nom complet</div><input class="fi" id="cl-name" placeholder="Prénom Nom"></div>
+    <div class="fg"><div class="fl">Téléphone</div><input class="fi" id="cl-phone" placeholder="06 12 34 56 78" type="tel"></div>
+    <div class="fg"><div class="fl">Email</div><input class="fi" id="cl-email" placeholder="client@email.com" type="email"></div>
+    <div class="fg"><div class="fl">Note</div><input class="fi" id="cl-note" placeholder="ex: aime les accessoires Apple…"></div>
+    <div class="mf">
+      <button class="mb" onclick="closeClientModal()">Annuler</button>
+      <button class="mb c" onclick="saveClient()">Enregistrer</button>
+    </div>
+  </div>
+</div>
 </div>
 
 <!-- ═══ MODALS ═══ -->
@@ -1439,7 +1649,9 @@ window.fbSaveInvoice=i=>fbPush('invoices',i);
 window.fbUpdateInvoice=(k,v)=>fbUpdate('invoices/'+k,v);
 window.fbDeleteInvoice=k=>fbRemove('invoices/'+k);
 window.fbSaveProfiles=p=>fbSet('profiles2',p);
-
+window.fbSaveClient=c=>fbPush('clients',c);
+window.fbUpdateClient=(k,v)=>fbUpdate('clients/'+k,v);
+window.fbDeleteClient=k=>fbRemove('clients/'+k);
 console.log('Firebase v3 ✓');
 </script>
 
@@ -1694,6 +1906,10 @@ function doLogin(){
   ov.style.display='flex';
   buildNav();
   if(window.startListeners)window.startListeners();
+  onValue(ref(db,'clients'),snap=>{
+  if(snap.exists()){const o=snap.val();window._CLI=Object.values(o);window._CLIK=Object.keys(o);}else{window._CLI=[];window._CLIK=[];}
+  refreshPage();syncUI('ok');
+},()=>syncUI('err'));
   goPage(_currentUser.role==='vendeur'?'caisse':'dash');
 }
 function logout(){
@@ -1707,13 +1923,13 @@ function logout(){
 // NAVIGATION
 // ════════════════════════════════════════
 const PAGE_LABELS={
-  dash:'📊 Tableau de bord',caisse:'🛒 Caisse',stock:'📦 Stock',
+  dash:'📊 Tableau de bord',caisse:'🛒 Caisse',stock:'📦 Stock',fidelite:'🎁 Fidélité',
   cmd:'📋 Commandes',ded:'➖ Déductions',histo:'🕐 Historique',
   'cc-admin':'🛍 Click & Collect',rep:'🔧 Réparations',factures:'🧾 Factures',calc:'🧮 Calculatrice',profils:'👥 Profils'
 };
-const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','profils'];
-const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc'];
-const VENDEUR_PAGES=['caisse','stock','calc'];
+const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','fidelite','profils'];
+const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','fidelite'];
+const VENDEUR_PAGES=['caisse','stock','calc','fidelite'];
 
 function buildNav(){
   const pages=_currentUser.role==='vendeur'?VENDEUR_PAGES:_currentUser.role==='gerant'?GERANT_PAGES:PATRON_PAGES;
@@ -1726,8 +1942,7 @@ function goPage(id){
   const bel=document.getElementById('nb-'+id);
   if(pel)pel.classList.add('active');
   if(bel)bel.classList.add('active');
-const map={dash:renderDash,caisse:renderCaisse,stock:renderStock,cmd:renderOrders,ded:renderDed,histo:renderHisto,'cc-admin':renderCCAdmin,rep:renderRepairs,factures:renderFactures,profils:renderProfiles};  if(map[id])map[id]();
-}
+const map={dash:renderDash,caisse:renderCaisse,stock:renderStock,cmd:renderOrders,ded:renderDed,histo:renderHisto,'cc-admin':renderCCAdmin,rep:renderRepairs,factures:renderFactures,fidelite:renderFidelite,profils:renderProfiles};}
 
 // ════════════════════════════════════════
 // TAUX (dashboard conv séparé)
@@ -1840,6 +2055,15 @@ function renderCaisse(){
   const filtered=_currentCat==='Tous'?window._P:window._P.filter(p=>p.cat===_currentCat);
   document.getElementById('prod-grid').innerHTML=filtered.map(p=>prodBtn(p)).join('');
   renderTicket();
+   // Ajoute dans renderCaisse() :
+const sel=document.getElementById('t-client-sel');
+if(sel){
+  sel.innerHTML='<option value="none">👤 Client anonyme</option>'+
+  [...window._CLI].sort((a,b)=>a.name.localeCompare(b.name)).map(c=>{
+    const key=window._CLIK[window._CLI.indexOf(c)];
+    return `<option value="${key}">${esc(c.name)} · ${c.points||0} pts</option>`;
+  }).join('');
+}
 }
 function prodBtn(p){
   const imgHtml=p.img?`<img class="pb-img" src="${p.img}" alt="">`:`<div class="pb-img-ph">📦</div>`;
@@ -1876,7 +2100,8 @@ function renderTicket(){
   document.getElementById('t-total').textContent=fmt(_ticket.reduce((a,t)=>a+t.price*t.qty,0));
 }
 function chQty(i,d){_ticket[i].qty+=d;if(_ticket[i].qty<=0)_ticket.splice(i,1);renderTicket();}
-function clearTicket(){_ticket=[];renderTicket();const nt=document.getElementById('t-note');if(nt)nt.value='';}
+function clearTicket()linkSaleToClient(sale);
+document.getElementById('t-client-sel').value='none';{_ticket=[];renderTicket();const nt=document.getElementById('t-note');if(nt)nt.value='';}
 async function doSale(){
   if(!_ticket.length){warn('Ticket vide');return;}
   const total=_ticket.reduce((a,t)=>a+t.price*t.qty,0);
@@ -2157,7 +2382,7 @@ window._S.forEach((s,i)=>keyMap.set(s,window._SK[i]));
     const canDel=_currentUser&&_currentUser.role!=='vendeur'&&key;
     const sIdx=window._S.indexOf(s);
     return `<tr>
-      <td style="font-size:11px">${new Date(s.ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+     <td style="font-size:11px">${new Date(s.ts).toLocaleString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
       <td style="font-size:12px">${esc(s.label)}</td>
       <td><span style="font-size:11px;color:${mc};font-weight:600">${ml}</span></td>
       <td style="font-size:11px;color:var(--txt2)">${esc(s.note)||'—'}</td>
