@@ -1599,8 +1599,9 @@ window.startListeners=function(){
     if(snap.exists()){const o=snap.val();window._INV=Object.values(o);window._INVK=Object.keys(o);window._INVNUM=Math.max(...window._INV.map(i=>i.num||0),0)+1;}else{window._INV=[];window._INVK=[];window._INVNUM=1;}
     refreshPage();syncUI('ok');
   },()=>syncUI('err'));
-  onValue(ref(db,'profiles2'),snap=>{
+    onValue(ref(db,'profiles2'),snap=>{
     if(snap.exists()){window._PROFILES=snap.val();}
+    renderUserCards();
     refreshPage();syncUI('ok');
   },()=>syncUI('err'));
 };
@@ -2100,8 +2101,7 @@ function renderTicket(){
   document.getElementById('t-total').textContent=fmt(_ticket.reduce((a,t)=>a+t.price*t.qty,0));
 }
 function chQty(i,d){_ticket[i].qty+=d;if(_ticket[i].qty<=0)_ticket.splice(i,1);renderTicket();}
-function clearTicket()linkSaleToClient(sale);
-document.getElementById('t-client-sel').value='none';{_ticket=[];renderTicket();const nt=document.getElementById('t-note');if(nt)nt.value='';}
+function clearTicket(){_ticket=[];renderTicket();const nt=document.getElementById('t-note');if(nt)nt.value='';document.getElementById('t-client-sel').value='none';}
 async function doSale(){
   if(!_ticket.length){warn('Ticket vide');return;}
   const total=_ticket.reduce((a,t)=>a+t.price*t.qty,0);
@@ -2110,7 +2110,7 @@ async function doSale(){
   _ticket.forEach(t=>{const p=window._P.find(x=>x.id===t.id);if(p&&p.cat!=='Café')p.stock=Math.max(0,p.stock-t.qty);});
   const sale={ts:Date.now(),date:today(),label,total,note,seller:_currentUser.name,payMode:_payMode,items:_ticket.map(t=>({...t}))};
   // Affichage immédiat — pas besoin d'attendre Firebase
-  showReceipt(sale);clearTicket();renderCaisse();
+ linkSaleToClient(sale);showReceipt(sale);clearTicket();renderCaisse();
   // Les 2 écritures Firebase tournent en parallèle en arrière-plan
   Promise.all([window.fbSaveProducts(),window.fbSaveSale(sale)]);
 }
@@ -3372,7 +3372,7 @@ window.addEventListener('load',()=>{
   const g=localStorage.getItem('kliko_goal');
   if(g)document.getElementById('goal-inp').value=g;
   document.getElementById('ded-date').value=today();
-  renderUserCards();
+  renderUserCards();  // affiche les profils par défaut en attendant Firebase
   fetchRate();
   setInterval(fetchRate,60000);
   setInterval(updateClock,1000);
