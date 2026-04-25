@@ -861,8 +861,11 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <div style="font-size:15px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt)">🕐 Historique</div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
-        <select class="fi" id="h-filter" onchange="renderHisto()" style="width:auto;padding:6px 10px">
-          <option value="today">Aujourd'hui</option><option value="week">Cette semaine</option><option value="all">Tout</option>
+       <select class="fi" id="h-filter" onchange="renderHisto()" style="width:auto;padding:6px 10px">
+          <option value="today">Aujourd'hui</option>
+          <option value="week">Cette semaine</option>
+          <option value="month">Ce mois</option>
+          <option value="all">Tout</option>
         </select>
         <button class="btn btn-r" onclick="exportPDF()">📄 PDF</button>
       </div>
@@ -2177,11 +2180,22 @@ function deleteDed(key){
 function renderHisto(){
   const f=document.getElementById('h-filter').value;
   let list=window._S;
-  if(f==='today')list=window._S.filter(s=>s.date===today());
-  else if(f==='week')list=weekSales();
+  
+  // LOGIQUE DE FILTRE MISE À JOUR
+  if(f==='today') list=window._S.filter(s=>s.date===today());
+  else if(f==='week') list=weekSales();
+  else if(f==='month'){
+    const now=new Date();
+    list=(window._S||[]).filter(s=>{
+      const d=new Date(s.ts);
+      return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    });
+  }
+  // Fin de la logique mois
+
   const rev=[...list].sort((a,b)=>b.ts-a.ts);
   const keyMap=new Map();
-window._S.forEach((s,i)=>keyMap.set(s,window._SK[i]));
+  window._S.forEach((s,i)=>keyMap.set(s,window._SK[i]));
 
   document.getElementById('h-tbody').innerHTML=rev.length?rev.map(s=>{
     const key=keyMap.get(s)||null;
@@ -2225,13 +2239,26 @@ async function confirmDelSale(){
 function exportPDF(){
   const f=document.getElementById('h-filter').value;
   let list=window._S;
-  if(f==='today')list=window._S.filter(s=>s.date===today());
-  else if(f==='week')list=weekSales();
+  
+  // LOGIQUE DE FILTRE MISE À JOUR
+  if(f==='today') list=window._S.filter(s=>s.date===today());
+  else if(f==='week') list=weekSales();
+  else if(f==='month'){
+    const now=new Date();
+    list=(window._S||[]).filter(s=>{
+      const d=new Date(s.ts);
+      return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    });
+  }
+
   const rev=[...list].sort((a,b)=>b.ts-a.ts);
   const tot=list.reduce((a,s)=>a+s.total,0);
   const cash=list.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
   const card=list.filter(s=>s.payMode==='carte').reduce((a,s)=>a+s.total,0);
-  const labels={today:"Aujourd'hui",week:'Cette semaine',all:'Tout'};
+  
+  // AJOUT DU LABEL 'month'
+  const labels={today:"Aujourd'hui",week:'Cette semaine',month:'Ce mois',all:'Tout'};
+  
   const dateStr=new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const ded=window._D.reduce((a,d)=>a+d.amount,0);
   const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Kliko – Rapport</title><style>
@@ -2275,7 +2302,6 @@ function exportPDF(){
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
-
 // ════════════════════════════════════════
 // CLICK & COLLECT
 // ════════════════════════════════════════
