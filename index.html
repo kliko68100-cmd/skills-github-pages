@@ -2260,16 +2260,22 @@ function renderDed(){
   const manuelEl=document.getElementById('solde-manuel-val');
   const manuelMeta=document.getElementById('solde-manuel-meta');
   const ecartEl=document.getElementById('solde-ecart');
-  if(cm&&typeof cm.amount==='number'){
-    manuelEl.textContent=fmt(cm.amount);
-    manuelEl.style.color=cm.amount>=0?'#4ade80':'#ff8080';
-    manuelMeta.textContent='Saisi par '+cm.by+' · '+new Date(cm.ts).toLocaleDateString('fr-FR');
-    const ecart=cm.amount-solde;
-    ecartEl.textContent=(ecart>=0?'Écart : +':' Écart : ')+fmt(Math.abs(ecart))+(ecart!==0?' ⚠️':'');
-    ecartEl.style.color=Math.abs(ecart)<1?'rgba(255,255,255,.35)':'#fbbf24';
-  }else{
-    manuelEl.textContent='Non saisi';manuelEl.style.color='rgba(255,255,255,.35)';
-    manuelMeta.textContent='Appuyez sur Corriger';ecartEl.textContent='';
+  if(manuelEl){
+    if(cm&&typeof cm.amount==='number'){
+      manuelEl.textContent=fmt(cm.amount);
+      manuelEl.style.color=cm.amount>=0?'#4ade80':'#ff8080';
+      if(manuelMeta)manuelMeta.textContent='Saisi par '+cm.by+' · '+new Date(cm.ts).toLocaleDateString('fr-FR');
+      if(ecartEl){
+        const ecart=cm.amount-solde;
+        ecartEl.textContent=(ecart>=0?'Écart : +':'Écart : ')+fmt(Math.abs(ecart))+(Math.abs(ecart)>0.01?' ⚠️':'');
+        ecartEl.style.color=Math.abs(ecart)<1?'rgba(255,255,255,.35)':'#fbbf24';
+      }
+    }else{
+      manuelEl.textContent='Non saisi';
+      manuelEl.style.color='rgba(255,255,255,.35)';
+      if(manuelMeta)manuelMeta.textContent='Appuyez sur Corriger';
+      if(ecartEl)ecartEl.textContent='';
+    }
   }
 
   const list=dedFilter==='all'?window._D:window._D.filter(d=>d.who===dedFilter);
@@ -2336,11 +2342,23 @@ async function saveCashManuel(){
   const v=parseFloat(document.getElementById('cash-manuel-inp').value);
   const note=(document.getElementById('cash-manuel-note').value||'').trim();
   if(isNaN(v)||v<0){warn('Montant invalide');return;}
-  await window.fbSaveCashManuel({amount:v,note,ts:Date.now(),by:_currentUser?_currentUser.name:'—'});
-  closeCashManuelModal();ok(`✅ Caisse réelle mise à jour : ${fmt(v)}`);
+  const data={amount:v,note,ts:Date.now(),by:_currentUser?_currentUser.name:'—'};
+  // Mise à jour locale immédiate — pas besoin d'attendre Firebase
+  window._CASH_MANUEL=data;
+  closeCashManuelModal();
+  renderDed();
+  renderDash();
+  // Sync Firebase en arrière-plan
+  window.fbSaveCashManuel(data);
+  ok(`✅ Caisse réelle : ${fmt(v)}`);
 }
 async function resetCashManuel(){
-  await window.fbDeleteCashManuel();closeCashManuelModal();ok('Correction manuelle supprimée');
+  window._CASH_MANUEL=null;
+  closeCashManuelModal();
+  renderDed();
+  renderDash();
+  window.fbDeleteCashManuel();
+  ok('Correction manuelle supprimée');
 }
 
 // ════════════════════════════════════════
