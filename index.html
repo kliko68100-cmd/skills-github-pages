@@ -778,7 +778,7 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   <div class="kpi-s" id="k-month-n">0 vente(s)</div>
 </div>
       <div class="kpi"><span class="kpi-icon">📅</span><div class="kpi-l">Ventes semaine</div><div class="kpi-v" id="k-week">0,00 €</div><div class="kpi-s" id="k-week-n">0 vente(s)</div></div>
-      <div class="kpi"><span class="kpi-icon">🏦</span><div class="kpi-l">Caisse espèces</div><div class="kpi-v g" id="k-cash">0,00 €</div><div class="kpi-s" id="k-cash-s">après déductions</div></div>
+      <div class="kpi"><span class="kpi-icon">🏦</span><div class="kpi-l">Caisse espèces <button onclick="showCashManuelModal()" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);color:#f0a500;border-radius:5px;padding:1px 7px;font-size:10px;cursor:pointer;font-weight:700;vertical-align:middle">✏️</button></div><div class="kpi-v g" id="k-cash">0,00 €</div><div class="kpi-s" id="k-cash-s">après déductions</div></div>
       <div class="kpi"><span class="kpi-icon">📦</span><div class="kpi-l">Stock bas</div><div class="kpi-v r" id="k-low">0</div><div class="kpi-s">produit(s) &lt; 3u</div></div>
     </div>
     <div class="dash-grid">
@@ -863,14 +863,21 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   <div class="page" id="p-ded">
     <div class="caisse-solde" id="solde-box">
       <div>
-        <div class="solde-label">💰 Caisse espèces nette</div>
+        <div class="solde-label">🧮 Caisse théorique</div>
         <div class="solde-val pos" id="solde-val">0,00 €</div>
         <div class="solde-detail" id="solde-detail">—</div>
+      </div>
+      <div id="solde-manuel-col" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px">Caisse réelle</div>
+        <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;color:#4ade80" id="solde-manuel-val">—</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.35)" id="solde-manuel-meta"></div>
+        <button onclick="showCashManuelModal()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600">✏️ Corriger</button>
       </div>
       <div class="solde-right">
         <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Déductions totales</div>
         <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;color:#ff8080" id="solde-ded-total">0,00 €</div>
         <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:4px" id="solde-card-total"></div>
+        <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:4px" id="solde-ecart"></div>
       </div>
     </div>
     <div class="ded-wrap">
@@ -916,10 +923,11 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
 
   <!-- HISTORIQUE -->
   <div class="page" id="p-histo">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div style="font-size:15px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt)">🕐 Historique</div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
-       <select class="fi" id="h-filter" onchange="renderHisto()" style="width:auto;padding:6px 10px">
+        <input class="fi" type="text" id="h-search" placeholder="🔍 Rechercher…" oninput="renderHisto()" style="width:160px;padding:6px 10px">
+        <select class="fi" id="h-filter" onchange="renderHisto()" style="width:auto;padding:6px 10px">
           <option value="today">Aujourd'hui</option>
           <option value="week">Cette semaine</option>
           <option value="month">Ce mois</option>
@@ -928,6 +936,8 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
         <button class="btn btn-r" onclick="exportPDF()">📄 PDF</button>
       </div>
     </div>
+    <!-- Résumé mensuel accordéon -->
+    <div id="h-monthly-summary" style="display:none;margin-bottom:14px"></div>
     <div class="stbl"><table>
       <thead><tr><th>Date</th><th>Articles</th><th>Paiement</th><th>Note</th><th>Vendeur</th><th>Total</th><th></th></tr></thead>
       <tbody id="h-tbody"></tbody>
@@ -1411,6 +1421,25 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   </div>
 </div>
 
+<!-- Correction manuelle caisse -->
+<div class="ov" id="cash-manuel-ov">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-t">✏️ Corriger le solde caisse</div>
+    <div id="cash-manuel-theo" style="background:rgba(255,200,0,.08);border:1px solid rgba(255,200,0,.2);border-radius:10px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#fbbf24;line-height:1.6"></div>
+    <div class="fg"><div class="fl">Montant réel en caisse (€)</div>
+      <input class="fi" type="number" id="cash-manuel-inp" placeholder="ex: 30.00" step="0.01" min="0">
+    </div>
+    <div class="fg"><div class="fl">Note (optionnel)</div>
+      <input class="fi" type="text" id="cash-manuel-note" placeholder="ex: après paiement loyer">
+    </div>
+    <div class="mf" style="flex-wrap:wrap;gap:8px">
+      <button class="mb" onclick="closeCashManuelModal()">Annuler</button>
+      <button class="mb danger" id="cash-manuel-reset-btn" onclick="resetCashManuel()" style="display:none">🗑 Effacer</button>
+      <button class="mb c" onclick="saveCashManuel()">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Confirm générique -->
 <div class="ov" id="confirm-ov">
   <div class="modal">
@@ -1484,6 +1513,10 @@ window.startListeners=function(){
     if(snap.exists()){window._PROFILES=snap.val();}
     refreshPage();syncUI('ok');
   },()=>syncUI('err'));
+  onValue(ref(db,'cash_manuel'),snap=>{
+    window._CASH_MANUEL=snap.exists()?snap.val():null;
+    refreshPage();syncUI('ok');
+  },()=>syncUI('err'));
 };
 
 let _firstLoad=false;
@@ -1521,6 +1554,8 @@ window.fbSaveOrder=o=>fbPush('orders2',o);
 window.fbUpdateOrder=(k,v)=>fbUpdate('orders2/'+k,v);
 window.fbSaveDed=d=>fbPush('deductions2',d);
 window.fbDeleteDed=k=>fbRemove('deductions2/'+k);
+window.fbSaveCashManuel=d=>fbSet('cash_manuel',d);
+window.fbDeleteCashManuel=()=>fbRemove('cash_manuel');
 window.fbSaveCCOrder=o=>fbPush('cc_orders',o);
 window.fbUpdateCCOrder=(k,v)=>fbUpdate('cc_orders/'+k,v);
 window.fbSaveRepair=r=>fbPush('repairs',r);
@@ -1579,6 +1614,7 @@ window._CATS=['Écouteurs TWS','Écouteurs filaires','Power Bank','Chargeurs','V
 window._S=[];window._SK=[];
 window._O=[];window._OK=[];
 window._D=[];window._DK=[];
+window._CASH_MANUEL=null;
 window._CCO=[];window._CCOK=[];
 window._REP=[];window._REPK=[];
 window._INV=[];window._INVK=[];window._INVNUM=1;
@@ -1899,9 +1935,11 @@ function renderDash(){
   document.getElementById('k-week-n').textContent = ws.length + ' vente(s)';
 
   const cash = cashSalesTotal()-totalDeds();
-  document.getElementById('k-cash').textContent = fmt(Math.abs(cash));
-  document.getElementById('k-cash').className = 'kpi-v '+(cash<0?'r':'g');
-  document.getElementById('k-cash-s').textContent = (window._D || []).length + ' déduction(s)';
+  const cm=window._CASH_MANUEL;
+  const displayCash=cm&&typeof cm.amount==='number'?cm.amount:cash;
+  document.getElementById('k-cash').textContent = fmt(Math.abs(displayCash));
+  document.getElementById('k-cash').className = 'kpi-v '+(displayCash<0?'r':'g');
+  document.getElementById('k-cash-s').textContent = cm?'✏️ Saisi manuellement':((window._D || []).length + ' déduction(s)');
   document.getElementById('k-low').textContent = window._P.filter(p=>p.stock<3&&p.cat!=='Café').length;
   document.getElementById('goal-pct').textContent = pct+'%';
   document.getElementById('goal-bar').style.width = pct+'%';
@@ -2217,6 +2255,23 @@ function renderDed(){
   document.getElementById('solde-detail').textContent='Entrées espèces : '+fmt(cashIn)+' · Déduit : '+fmt(totalDed);
   document.getElementById('solde-card-total').textContent='Carte : '+fmt(cardIn)+' (non inclus dans la caisse)';
 
+  // Caisse réelle manuelle
+  const cm=window._CASH_MANUEL;
+  const manuelEl=document.getElementById('solde-manuel-val');
+  const manuelMeta=document.getElementById('solde-manuel-meta');
+  const ecartEl=document.getElementById('solde-ecart');
+  if(cm&&typeof cm.amount==='number'){
+    manuelEl.textContent=fmt(cm.amount);
+    manuelEl.style.color=cm.amount>=0?'#4ade80':'#ff8080';
+    manuelMeta.textContent='Saisi par '+cm.by+' · '+new Date(cm.ts).toLocaleDateString('fr-FR');
+    const ecart=cm.amount-solde;
+    ecartEl.textContent=(ecart>=0?'Écart : +':' Écart : ')+fmt(Math.abs(ecart))+(ecart!==0?' ⚠️':'');
+    ecartEl.style.color=Math.abs(ecart)<1?'rgba(255,255,255,.35)':'#fbbf24';
+  }else{
+    manuelEl.textContent='Non saisi';manuelEl.style.color='rgba(255,255,255,.35)';
+    manuelMeta.textContent='Appuyez sur Corriger';ecartEl.textContent='';
+  }
+
   const list=dedFilter==='all'?window._D:window._D.filter(d=>d.who===dedFilter);
   const sorted=[...list].sort((a,b)=>b.ts-a.ts);
   const filtTotal=sorted.reduce((a,d)=>a+d.amount,0);
@@ -2262,23 +2317,101 @@ function deleteDed(key){
 }
 
 // ════════════════════════════════════════
+// CORRECTION MANUELLE CAISSE
+// ════════════════════════════════════════
+function showCashManuelModal(){
+  const theo=cashSalesTotal()-totalDeds();
+  const cm=window._CASH_MANUEL;
+  document.getElementById('cash-manuel-theo').innerHTML=
+    `<strong>Solde théorique calculé : ${fmt(theo)}</strong><br><span style="opacity:.8">Entrez le montant <strong>réellement présent</strong> dans la caisse en ce moment.</span>`;
+  document.getElementById('cash-manuel-inp').value=cm&&typeof cm.amount==='number'?cm.amount.toFixed(2):'';
+  document.getElementById('cash-manuel-note').value=cm&&cm.note?cm.note:'';
+  const resetBtn=document.getElementById('cash-manuel-reset-btn');
+  if(resetBtn)resetBtn.style.display=cm?'':'none';
+  document.getElementById('cash-manuel-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('cash-manuel-inp')?.focus(),80);
+}
+function closeCashManuelModal(){document.getElementById('cash-manuel-ov').classList.remove('open');}
+async function saveCashManuel(){
+  const v=parseFloat(document.getElementById('cash-manuel-inp').value);
+  const note=(document.getElementById('cash-manuel-note').value||'').trim();
+  if(isNaN(v)||v<0){warn('Montant invalide');return;}
+  await window.fbSaveCashManuel({amount:v,note,ts:Date.now(),by:_currentUser?_currentUser.name:'—'});
+  closeCashManuelModal();ok(`✅ Caisse réelle mise à jour : ${fmt(v)}`);
+}
+async function resetCashManuel(){
+  await window.fbDeleteCashManuel();closeCashManuelModal();ok('Correction manuelle supprimée');
+}
+
+// ════════════════════════════════════════
 // HISTORIQUE
 // ════════════════════════════════════════
-function renderHisto(){
-  const f=document.getElementById('h-filter').value;
-  let list=window._S;
-  
-  // LOGIQUE DE FILTRE MISE À JOUR
-  if(f==='today') list=window._S.filter(s=>s.date===today());
-  else if(f==='week') list=weekSales();
-  else if(f==='month'){
+// ════════════════════════════════════════
+// HISTORIQUE — MOIS DYNAMIQUES + RECHERCHE
+// ════════════════════════════════════════
+function buildMonthOptions(){
+  // Génère les options de mois à partir des données réelles
+  const sel=document.getElementById('h-filter');
+  if(!sel)return;
+  const current=sel.value;
+
+  // Collecte tous les YYYY-MM uniques des ventes
+  const months=new Map();
+  (window._S||[]).forEach(s=>{
+    if(!s.ts)return;
+    const d=new Date(s.ts);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!months.has(key)){
+      months.set(key,d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'}));
+    }
+  });
+
+  // Tri décroissant
+  const sorted=[...months.entries()].sort((a,b)=>b[0].localeCompare(a[0]));
+
+  // Conserver les options fixes
+  sel.innerHTML=`
+    <option value="today">Aujourd'hui</option>
+    <option value="week">Cette semaine</option>
+    <option value="month">Ce mois-ci</option>
+    <optgroup label="── Mois passés ──">
+      ${sorted.map(([k,label])=>{
+        const now=new Date();
+        const isCurrent=k===`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        if(isCurrent)return''; // déjà dans "ce mois-ci"
+        return`<option value="prev_${k}">${label.charAt(0).toUpperCase()+label.slice(1)}</option>`;
+      }).join('')}
+    </optgroup>
+    <option value="all">Tout l'historique</option>`;
+
+  // Restaurer la sélection si elle existe encore
+  if(current&&[...sel.options].some(o=>o.value===current))sel.value=current;
+}
+
+function filterBySelection(f){
+  let list=window._S||[];
+  if(f==='today') return list.filter(s=>s.date===today());
+  if(f==='week') return weekSales();
+  if(f==='month'){
     const now=new Date();
-    list=(window._S||[]).filter(s=>{
-      const d=new Date(s.ts);
-      return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
-    });
+    return list.filter(s=>{const d=new Date(s.ts);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
   }
-  // Fin de la logique mois
+  if(f.startsWith('prev_')){
+    const[yr,mo]=f.slice(5).split('-').map(Number);
+    return list.filter(s=>{const d=new Date(s.ts);return d.getFullYear()===yr&&d.getMonth()+1===mo;});
+  }
+  return list; // all
+}
+
+function renderHisto(){
+  buildMonthOptions();
+  const f=document.getElementById('h-filter').value;
+  const q=(document.getElementById('h-search')?.value||'').toLowerCase().trim();
+
+  let list=filterBySelection(f);
+
+  // Recherche texte
+  if(q) list=list.filter(s=>(s.label||'').toLowerCase().includes(q)||(s.note||'').toLowerCase().includes(q)||(s.seller||'').toLowerCase().includes(q));
 
   const rev=[...list].sort((a,b)=>b.ts-a.ts);
   const keyMap=new Map();
@@ -2312,6 +2445,62 @@ function renderHisto(){
     <span style="color:var(--g)">💵 ${fmt(cash)}</span>
     <span style="color:var(--bl)">💳 ${fmt(card)}</span>
     <span style="font-weight:700;color:var(--or)">Total : ${fmt(tot)}</span>`;
+
+  // Panneau récap mensuel (affiché uniquement en vue "tout l'historique")
+  renderMonthlySummary(f);
+}
+
+function renderMonthlySummary(f){
+  const box=document.getElementById('h-monthly-summary');
+  if(!box)return;
+  if(f!=='all'){box.style.display='none';return;}
+
+  const map=new Map();
+  (window._S||[]).forEach(s=>{
+    if(!s.ts)return;
+    const d=new Date(s.ts);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    if(!map.has(key))map.set(key,{label,total:0,cash:0,card:0,count:0});
+    const m=map.get(key);
+    m.total+=s.total;m.count++;
+    if(s.payMode==='carte')m.card+=s.total;else m.cash+=s.total;
+  });
+  if(!map.size){box.style.display='none';return;}
+
+  const sorted=[...map.entries()].sort((a,b)=>b[0].localeCompare(a[0]));
+  const maxTot=Math.max(...sorted.map(([,v])=>v.total));
+
+  box.style.display='block';
+  box.innerHTML=`
+    <div style="font-size:13px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt);margin-bottom:10px">📅 Récapitulatif par mois</div>
+    <div style="display:grid;gap:7px">
+      ${sorted.map(([k,m])=>{
+        const pct=maxTot>0?Math.round((m.total/maxTot)*100):0;
+        const lbl=m.label.charAt(0).toUpperCase()+m.label.slice(1);
+        return`<div style="background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:11px 14px;cursor:pointer" onclick="jumpToMonth('prev_${k}')">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600;font-size:13px;color:var(--txt)">${lbl}</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <span style="font-size:11px;color:var(--g)">💵 ${fmt(m.cash)}</span>
+              <span style="font-size:11px;color:var(--bl)">💳 ${fmt(m.card)}</span>
+              <span style="font-size:11px;color:var(--txt2)">${m.count} ventes</span>
+              <span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--or)">${fmt(m.total)}</span>
+              <span style="font-size:10px;color:var(--txt2)">→</span>
+            </div>
+          </div>
+          <div style="background:var(--bd);border-radius:3px;height:5px;overflow:hidden">
+            <div style="background:var(--or);height:100%;width:${pct}%;border-radius:3px;transition:width .4s"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function jumpToMonth(val){
+  const sel=document.getElementById('h-filter');
+  if(sel){sel.value=val;renderHisto();}
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 function openDelSale(key,label,total){
   _pendingDelKey=key;
@@ -2325,27 +2514,24 @@ async function confirmDelSale(){
 
 function exportPDF(){
   const f=document.getElementById('h-filter').value;
-  let list=window._S;
-  
-  // LOGIQUE DE FILTRE MISE À JOUR
-  if(f==='today') list=window._S.filter(s=>s.date===today());
-  else if(f==='week') list=weekSales();
-  else if(f==='month'){
-    const now=new Date();
-    list=(window._S||[]).filter(s=>{
-      const d=new Date(s.ts);
-      return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
-    });
-  }
+  let list=filterBySelection(f);
 
   const rev=[...list].sort((a,b)=>b.ts-a.ts);
   const tot=list.reduce((a,s)=>a+s.total,0);
   const cash=list.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
   const card=list.filter(s=>s.payMode==='carte').reduce((a,s)=>a+s.total,0);
-  
-  // AJOUT DU LABEL 'month'
-  const labels={today:"Aujourd'hui",week:'Cette semaine',month:'Ce mois',all:'Tout'};
-  
+
+  // Label du filtre
+  let filterLabel="Aujourd'hui";
+  if(f==='week')filterLabel='Cette semaine';
+  else if(f==='month')filterLabel='Ce mois-ci';
+  else if(f==='all')filterLabel='Tout l\'historique';
+  else if(f.startsWith('prev_')){
+    const[yr,mo]=f.slice(5).split('-').map(Number);
+    filterLabel=new Date(yr,mo-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    filterLabel=filterLabel.charAt(0).toUpperCase()+filterLabel.slice(1);
+  }
+
   const dateStr=new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const ded=window._D.reduce((a,d)=>a+d.amount,0);
   const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Kliko – Rapport</title><style>
@@ -2366,7 +2552,7 @@ function exportPDF(){
   </style></head><body>
   <div class="header">
     <div><div class="logo">Kli<span>k</span>o</div><div style="font-size:12px;color:#888;margin-top:4px">28 av. Aristide Briand · 68200 Mulhouse</div></div>
-    <div class="meta"><div style="font-weight:700">${labels[f]}</div><div>${dateStr}</div><div>Généré par ${_currentUser?.name||'—'}</div></div>
+    <div class="meta"><div style="font-weight:700">${filterLabel}</div><div>${dateStr}</div><div>Généré par ${_currentUser?.name||'—'}</div></div>
   </div>
   <div class="kpis">
     <div class="kpi"><div class="kpi-l">Ventes</div><div class="kpi-v">${list.length}</div></div>
@@ -2384,7 +2570,7 @@ function exportPDF(){
       <td>${s.seller||'—'}</td><td>${s.note||'—'}</td>
       <td style="font-weight:700;color:#E87D20">${s.total.toLocaleString('fr-FR',{minimumFractionDigits:2})} €</td>
     </tr>`).join('')}</tbody>
-    <tfoot><tr><td colspan="5">TOTAL ${labels[f]}</td><td style="color:#E87D20">${tot.toLocaleString('fr-FR',{minimumFractionDigits:2})} €</td></tr></tfoot>
+    <tfoot><tr><td colspan="5">TOTAL ${filterLabel}</td><td style="color:#E87D20">${tot.toLocaleString('fr-FR',{minimumFractionDigits:2})} €</td></tr></tfoot>
   </table>
   <script>window.onload=()=>window.print();<\/script></body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();
