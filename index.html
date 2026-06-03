@@ -626,20 +626,6 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
 .sync-dot.error{background:var(--r);animation:none}
 .page{animation:pageIn .22s cubic-bezier(.4,0,.2,1)}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-/* Accent profil */
-#profile-accent{height:3px;width:100%;position:absolute;top:0;left:0;transition:background .4s;border-radius:0}
-.topbar{position:relative}
-/* Notes équipe */
-.notes-ta{width:100%;min-height:80px;border:1px solid var(--bd);border-radius:10px;background:var(--bg2);color:var(--txt);font-size:13px;font-family:'DM Sans',sans-serif;padding:10px 12px;resize:vertical;outline:none;line-height:1.6;transition:border .2s}
-.notes-ta:focus{border-color:var(--or)}
-/* Courbe 30j */
-#curve-30{width:100%;height:70px}
-/* Stats vendeur */
-.seller-stat{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bd)}
-.seller-stat:last-child{border-bottom:none}
-/* Clôture */
-.cloture-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--txt2);font-weight:600;cursor:pointer;transition:all .15s}
-.cloture-chip:hover{border-color:var(--or);color:var(--or)}
 .modal{animation:modalIn .28s cubic-bezier(.34,1.56,.64,1)}
 @keyframes modalIn{from{opacity:0;transform:translateY(32px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
 .kpi{transition:transform .2s,box-shadow .2s,background .3s,border .3s;cursor:default}
@@ -696,12 +682,7 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   .profiles-grid{grid-template-columns:1fr 1fr}
   .prod-grid{grid-template-columns:repeat(2,1fr)}
 }
-<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Kliko POS&quot;,&quot;short_name&quot;:&quot;Kliko&quot;,&quot;start_url&quot;:&quot;/&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%23F2F1ED&quot;,&quot;theme_color&quot;:&quot;%23E87D20&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;https://fav.farm/🛒&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/png&quot;}]}">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Kliko">
-<meta name="theme-color" content="#E87D20">
+</style>
 </head>
 <body>
 <div id="app">
@@ -769,7 +750,6 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   <div style="font-size:13px;color:var(--txt2);font-family:'Syne',sans-serif;font-weight:600">Chargement des données…</div>
 </div>
   <div class="topbar">
-    <div id="profile-accent"></div>
     <div class="logo">Kli<span>k</span>o</div>
     <div class="nav" id="nav"></div>
     <div class="topbar-r">
@@ -813,34 +793,6 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
           <input type="number" id="d-eur" placeholder="EUR" style="flex:1;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg2);color:var(--txt);font-size:15px;font-weight:600;outline:none;font-family:'Syne',sans-serif" oninput="dconv('eur')">
         </div>
         <div class="card" style="margin-top:10px;padding:10px"><div class="card-t" style="margin-bottom:6px">⚠️ Alertes stock</div><div id="d-alerts"><div class="empty">Aucune alerte 🎉</div></div></div>
-      </div>
-    </div>
-    <!-- Ligne 2 dashboard : courbe 30j + notes équipe + clôture -->
-    <div class="dash-grid" style="margin-top:14px">
-      <div class="card">
-        <div class="card-t">📈 Tendance 30 jours</div>
-        <svg id="curve-30" viewBox="0 0 300 70" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--or)" stop-opacity=".25"/><stop offset="100%" stop-color="var(--or)" stop-opacity="0"/></linearGradient></defs>
-          <path id="curve-fill" fill="url(#cg)"/><path id="curve-line" fill="none" stroke="var(--or)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-top:4px">
-          <span>J-29</span><span>J-14</span><span>Aujourd'hui</span>
-        </div>
-        <div style="font-size:11px;color:var(--txt2);margin-top:6px;text-align:center" id="curve-avg"></div>
-      </div>
-      <div class="card">
-        <div class="card-t" style="display:flex;justify-content:space-between;align-items:center">
-          <span>📝 Notes équipe</span>
-          <button class="abt" onclick="saveNotes()" style="color:var(--or);border-color:var(--or);font-size:11px">💾 Sauvegarder</button>
-        </div>
-        <textarea class="notes-ta" id="notes-ta" placeholder="Laisser un message à l'équipe…"></textarea>
-        <div style="font-size:10px;color:var(--txt3);margin-top:5px" id="notes-meta"></div>
-      </div>
-      <div class="card" id="cloture-card" style="display:none">
-        <div class="card-t">📋 Clôture journalière</div>
-        <div style="font-size:12px;color:var(--txt2);margin-bottom:12px;line-height:1.6">Archive les totaux du jour dans Firebase. Consultable à tout moment dans l'historique des clôtures.</div>
-        <div id="cloture-hist" style="margin-bottom:12px"></div>
-        <button class="sbtn" onclick="showClotureModal()" style="width:100%">📋 Clôturer la journée</button>
       </div>
     </div>
   </div>
@@ -914,16 +866,12 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
         <div class="solde-label">🧮 Caisse théorique</div>
         <div class="solde-val pos" id="solde-val">0,00 €</div>
         <div class="solde-detail" id="solde-detail">—</div>
-        <div id="fond-caisse-line" style="margin-top:6px;font-size:11px;color:rgba(255,255,255,.4);display:none">
-          🏦 Fond de caisse : <span id="fond-caisse-display" style="color:rgba(255,255,255,.7);font-weight:600">0,00 €</span>
-          <button id="btn-edit-fond" onclick="showFondCaisseModal()" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);color:#f0a500;border-radius:4px;padding:1px 7px;font-size:10px;cursor:pointer;font-weight:700;margin-left:6px;display:none">✏️</button>
-        </div>
       </div>
       <div id="solde-manuel-col" style="display:flex;flex-direction:column;align-items:center;gap:6px">
         <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px">Caisse réelle</div>
         <div style="font-size:26px;font-weight:800;font-family:'Syne',sans-serif;color:#4ade80" id="solde-manuel-val">—</div>
         <div style="font-size:10px;color:rgba(255,255,255,.35)" id="solde-manuel-meta"></div>
-        <button id="btn-corriger-caisse" onclick="showCashManuelModal()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;display:none">✏️ Corriger</button>
+        <button onclick="showCashManuelModal()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600">✏️ Corriger</button>
       </div>
       <div class="solde-right">
         <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Déductions totales</div>
@@ -990,7 +938,6 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
     </div>
     <!-- Résumé mensuel accordéon -->
     <div id="h-monthly-summary" style="display:none;margin-bottom:14px"></div>
-    <div id="h-seller-stats" style="display:none;margin-bottom:14px"></div>
     <div class="stbl"><table>
       <thead><tr><th>Date</th><th>Articles</th><th>Paiement</th><th>Note</th><th>Vendeur</th><th>Total</th><th></th></tr></thead>
       <tbody id="h-tbody"></tbody>
@@ -1474,41 +1421,6 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   </div>
 </div>
 
-<!-- Clôture journalière -->
-<div class="ov" id="cloture-ov">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-t">📋 Clôture du <span id="cloture-date-title"></span></div>
-    <div id="cloture-recap" style="margin-bottom:16px"></div>
-    <div class="fg"><div class="fl">Note (optionnel)</div>
-      <input class="fi" type="text" id="cloture-note" placeholder="Ex: journée chargée, marché ce soir…">
-    </div>
-    <div class="mf" style="gap:8px">
-      <button class="mb" onclick="document.getElementById('cloture-ov').classList.remove('open')">Annuler</button>
-      <button class="mb c" onclick="saveCloture()">✅ Archiver la journée</button>
-    </div>
-  </div>
-</div>
-
-<!-- Fond de caisse (gérant uniquement) -->
-<div class="ov" id="fond-caisse-ov">
-  <div class="modal" style="max-width:400px">
-    <div class="modal-t">🏦 Fond de caisse</div>
-    <div id="fond-modal-info" style="background:rgba(255,200,0,.08);border:1px solid rgba(255,200,0,.2);border-radius:10px;padding:11px 14px;margin-bottom:14px;font-size:13px;color:#fbbf24;line-height:1.7"></div>
-    <div class="fg"><div class="fl">Montant du fond de caisse (€)</div>
-      <input class="fi" type="number" id="fond-inp" placeholder="ex: 50.00" step="0.01" min="0">
-    </div>
-    <div style="font-size:12px;color:var(--txt2);margin-bottom:12px;line-height:1.5">
-      Ce montant s'ajoute aux ventes espèces dans le calcul théorique.<br>
-      Utile si tu avais déjà de la monnaie en caisse avant d'ouvrir.
-    </div>
-    <div class="mf" style="flex-wrap:wrap;gap:8px">
-      <button class="mb" onclick="closeFondCaisseModal()">Annuler</button>
-      <button class="mb" onclick="resetFondCaisse()" style="color:var(--r);border-color:var(--r)">🗑 Remettre à zéro</button>
-      <button class="mb c" onclick="saveFondCaisse()">✅ Enregistrer</button>
-    </div>
-  </div>
-</div>
-
 <!-- Correction manuelle caisse -->
 <div class="ov" id="cash-manuel-ov">
   <div class="modal" style="max-width:400px">
@@ -1570,10 +1482,7 @@ window.syncUI=syncUI;
 
 window.startListeners=function(){
   onValue(ref(db,'products2'),snap=>{
-    if(snap.exists()){const d=snap.val();window._P=d.list||window._P;window._NPI=d.nextId||window._NPI;window._CATS=d.categories||window._CATS;
-    // Fond de caisse partagé via products2
-    if(typeof d.fondCaisse==='number'){window._FOND_CAISSE=d.fondCaisse;}
-    }
+    if(snap.exists()){const d=snap.val();window._P=d.list||window._P;window._NPI=d.nextId||window._NPI;window._CATS=d.categories||window._CATS;}
     refreshPage();syncUI('ok');
   },()=>syncUI('err'));
   onValue(ref(db,'sales2'),snap=>{
@@ -1604,17 +1513,10 @@ window.startListeners=function(){
     if(snap.exists()){window._PROFILES=snap.val();}
     refreshPage();syncUI('ok');
   },()=>syncUI('err'));
-  onValue(ref(db,'notes_equipe'),snap=>{
-    window._NOTES=snap.exists()?snap.val():{text:'',ts:0,by:''};
-    const ta=document.getElementById('notes-ta');
-    if(ta&&document.activeElement!==ta)ta.value=window._NOTES.text||'';
-    const meta=document.getElementById('notes-meta');
-    if(meta&&window._NOTES.ts)meta.textContent='Dernière modif : '+new Date(window._NOTES.ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' par '+window._NOTES.by;
-  },()=>{});
-  onValue(ref(db,'clotures'),snap=>{
-    window._CLOTURES=snap.exists()?snap.val():{};
+  onValue(ref(db,'cash_manuel'),snap=>{
+    window._CASH_MANUEL=snap.exists()?snap.val():null;
     refreshPage();syncUI('ok');
-  },()=>{});
+  },()=>syncUI('err'));
 };
 
 let _firstLoad=false;
@@ -1645,19 +1547,15 @@ async function fbPush(path,val){syncUI('sync');try{await push(ref(db,path),val);
 async function fbUpdate(path,val){syncUI('sync');try{await update(ref(db,path),val);syncUI('ok');}catch(e){syncUI('err');}}
 async function fbRemove(path){syncUI('sync');try{await remove(ref(db,path));syncUI('ok');}catch(e){syncUI('err');}}
 
-window.fbSaveProducts=()=>fbSet('products2',{list:window._P,nextId:window._NPI,categories:window._CATS,fondCaisse:window._FOND_CAISSE||0});
+window.fbSaveProducts=()=>fbSet('products2',{list:window._P,nextId:window._NPI,categories:window._CATS});
 window.fbSaveSale=s=>fbPush('sales2',s);
 window.fbDeleteSale=k=>fbRemove('sales2/'+k);
 window.fbSaveOrder=o=>fbPush('orders2',o);
 window.fbUpdateOrder=(k,v)=>fbUpdate('orders2/'+k,v);
 window.fbSaveDed=d=>fbPush('deductions2',d);
 window.fbDeleteDed=k=>fbRemove('deductions2/'+k);
-// cash_manuel : localStorage uniquement (pas besoin de Firebase pour une valeur locale)
-window.saveCashManuelLocal=d=>{window._CASH_MANUEL=d;localStorage.setItem('kliko_cash_manuel',JSON.stringify(d));};
-window.deleteCashManuelLocal=()=>{window._CASH_MANUEL=null;localStorage.removeItem('kliko_cash_manuel');};
-// Fond de caisse : Firebase via products2 (partagé entre tous) + localStorage fallback
-window.saveFondCaisseLocal=async v=>{window._FOND_CAISSE=v;localStorage.setItem('kliko_fond_caisse',String(v));await window.fbSaveProducts();};
-window.deleteFondCaisseLocal=async()=>{window._FOND_CAISSE=0;localStorage.removeItem('kliko_fond_caisse');await window.fbSaveProducts();};
+window.fbSaveCashManuel=d=>fbSet('cash_manuel',d);
+window.fbDeleteCashManuel=()=>fbRemove('cash_manuel');
 window.fbSaveCCOrder=o=>fbPush('cc_orders',o);
 window.fbUpdateCCOrder=(k,v)=>fbUpdate('cc_orders/'+k,v);
 window.fbSaveRepair=r=>fbPush('repairs',r);
@@ -1667,8 +1565,6 @@ window.fbSaveInvoice=i=>fbPush('invoices',i);
 window.fbUpdateInvoice=(k,v)=>fbUpdate('invoices/'+k,v);
 window.fbDeleteInvoice=k=>fbRemove('invoices/'+k);
 window.fbSaveProfiles=p=>fbSet('profiles2',p);
-window.fbSaveNotes=d=>fbSet('notes_equipe',d);
-window.fbSaveCloture=(date,d)=>fbSet('clotures/'+date,d);
 
 console.log('Firebase v3 ✓');
 </script>
@@ -1718,13 +1614,10 @@ window._CATS=['Écouteurs TWS','Écouteurs filaires','Power Bank','Chargeurs','V
 window._S=[];window._SK=[];
 window._O=[];window._OK=[];
 window._D=[];window._DK=[];
-window._CASH_MANUEL=JSON.parse(localStorage.getItem('kliko_cash_manuel')||'null');
-window._FOND_CAISSE=parseFloat(localStorage.getItem('kliko_fond_caisse')||'0');
+window._CASH_MANUEL=null;
 window._CCO=[];window._CCOK=[];
 window._REP=[];window._REPK=[];
 window._INV=[];window._INVK=[];window._INVNUM=1;
-window._NOTES={text:'',ts:0,by:''};
-window._CLOTURES={};
 
 // Profils par défaut
 window._PROFILES={
@@ -1929,10 +1822,6 @@ function doLogin(){
   const ma=document.getElementById('main-app');
   ma.style.display='flex';ma.style.flexDirection='column';
   document.getElementById('u-name').textContent=_currentUser.name;
-  // Accent couleur profil
-  const color=_currentUser.color||'#E87D20';
-  document.getElementById('profile-accent').style.background=`linear-gradient(90deg,${color},${color}88,transparent)`;
-  document.getElementById('u-name').parentElement.style.borderColor=color+'55';
   const ov=document.getElementById('loading-overlay');
   ov.style.display='flex';
   buildNav();
@@ -2010,10 +1899,8 @@ function weekSales(){
   const mon=new Date(now);mon.setDate(now.getDate()-(day-1));mon.setHours(0,0,0,0);
   return window._S.filter(s=>new Date(s.ts)>=mon);
 }
-function cashSalesTotal(){return (window._FOND_CAISSE||0)+window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);}
+function cashSalesTotal(){return window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);}
 function totalDeds(){return window._D.reduce((a,d)=>a+d.amount,0);}
-// Solde théorique = fond de caisse + ventes espèces - déductions
-function soldeTheorique(){return cashSalesTotal()-totalDeds();}
 function saveGoal(){localStorage.setItem('kliko_goal',document.getElementById('goal-inp').value);}
 
 function renderDash(){
@@ -2049,14 +1936,10 @@ function renderDash(){
 
   const cash = cashSalesTotal()-totalDeds();
   const cm=window._CASH_MANUEL;
-  const isMehdi=_currentUser&&_currentUser.id==='mehdi';
   const displayCash=cm&&typeof cm.amount==='number'?cm.amount:cash;
   document.getElementById('k-cash').textContent = fmt(Math.abs(displayCash));
   document.getElementById('k-cash').className = 'kpi-v '+(displayCash<0?'r':'g');
   document.getElementById('k-cash-s').textContent = cm?'✏️ Saisi manuellement':((window._D || []).length + ' déduction(s)');
-  // Afficher le bouton edit seulement pour Mehdi
-  const cashEditBtn=document.querySelector('#k-cash')?.closest('.kpi')?.querySelector('button');
-  if(cashEditBtn)cashEditBtn.style.display=isMehdi?'':'none';
   document.getElementById('k-low').textContent = window._P.filter(p=>p.stock<3&&p.cat!=='Café').length;
   document.getElementById('goal-pct').textContent = pct+'%';
   document.getElementById('goal-bar').style.width = pct+'%';
@@ -2103,46 +1986,6 @@ function renderDash(){
   document.getElementById('d-alerts').innerHTML = alerts.length ? alerts.map(p=>`
     <div class="row"><span style="font-size:12px">${p.name}</span>
     <span class="badge ${p.stock===0?'br':'bw'}">${p.stock===0?'Épuisé':p.stock+' restant'}</span></div>`).join('') : '<div class="empty">Aucune alerte 🎉</div>';
-
-  // Courbe 30 jours
-  const days30=[];
-  for(let i=29;i>=0;i--){
-    const d=new Date();d.setDate(d.getDate()-i);
-    const ds2=d.toISOString().slice(0,10);
-    const total=(window._S||[]).filter(s=>s.date===ds2).reduce((a,s)=>a+s.total,0);
-    days30.push(total);
-  }
-  const maxD=Math.max(...days30,1);
-  const W=300,H=70,pad=4;
-  const pts=days30.map((v,i)=>({x:pad+i*(W-pad*2)/29,y:H-pad-(v/maxD)*(H-pad*2)}));
-  const line=pts.map((p,i)=>(i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`)).join(' ');
-  const fill=line+` L${pts[pts.length-1].x},${H} L${pts[0].x},${H} Z`;
-  const lEl=document.getElementById('curve-line');
-  const fEl=document.getElementById('curve-fill');
-  if(lEl)lEl.setAttribute('d',line);
-  if(fEl)fEl.setAttribute('d',fill);
-  const avg30=days30.reduce((a,v)=>a+v,0)/30;
-  const avgEl=document.getElementById('curve-avg');
-  if(avgEl)avgEl.textContent=`Moyenne 30j : ${fmt(avg30)}/jour`;
-
-  // Notes équipe
-  const ta=document.getElementById('notes-ta');
-  if(ta&&document.activeElement!==ta&&window._NOTES)ta.value=window._NOTES.text||'';
-  const noteMeta=document.getElementById('notes-meta');
-  if(noteMeta&&window._NOTES&&window._NOTES.ts)noteMeta.textContent='Par '+window._NOTES.by+' · '+new Date(window._NOTES.ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-
-  // Clôture (Mehdi uniquement)
-  const isMehdi2=_currentUser&&_currentUser.id==='mehdi';
-  const clotCard=document.getElementById('cloture-card');
-  if(clotCard)clotCard.style.display=isMehdi2?'':'none';
-  if(isMehdi2){
-    const hist=document.getElementById('cloture-hist');
-    if(hist){
-      const entries=Object.entries(window._CLOTURES||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,3);
-      hist.innerHTML=entries.length?entries.map(([date,c])=>`
-        <div class="cloture-chip" title="${c.note||''}">📅 ${date} · <strong>${fmt(c.total)}</strong></div>`).join(' '):'<div style="font-size:12px;color:var(--txt3)">Aucune clôture encore</div>';
-    }
-  }
 }
 // ════════════════════════════════════════
 // CAISSE
@@ -2401,55 +2244,32 @@ async function setOrdStatus(key,i,status){
 // DÉDUCTIONS (amélioré)
 // ════════════════════════════════════════
 function renderDed(){
-  const isMehdi=_currentUser&&_currentUser.id==='mehdi';
   const dedFilter=document.getElementById('ded-filter').value;
-  const fond=window._FOND_CAISSE||0;
   const cashIn=window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
   const cardIn=window._S.filter(s=>s.payMode==='carte').reduce((a,s)=>a+s.total,0);
   const totalDed=window._D.reduce((a,d)=>a+d.amount,0);
-  const solde=(fond+cashIn)-totalDed;
-
+  const solde=cashIn-totalDed;
   document.getElementById('solde-val').textContent=fmt(Math.abs(solde));
   document.getElementById('solde-val').className='solde-val '+(solde<0?'neg':'pos');
   document.getElementById('solde-ded-total').textContent=fmt(totalDed);
-  document.getElementById('solde-detail').textContent='Ventes espèces : '+fmt(cashIn)+' · Déduit : '+fmt(totalDed);
+  document.getElementById('solde-detail').textContent='Entrées espèces : '+fmt(cashIn)+' · Déduit : '+fmt(totalDed);
   document.getElementById('solde-card-total').textContent='Carte : '+fmt(cardIn)+' (non inclus dans la caisse)';
-
-  // Fond de caisse (visible par tous, modifiable que par Mehdi)
-  const fondLine=document.getElementById('fond-caisse-line');
-  const fondDisplay=document.getElementById('fond-caisse-display');
-  const btnFond=document.getElementById('btn-edit-fond');
-  if(fondLine){
-    fondLine.style.display=fond>0||isMehdi?'block':'none';
-    if(fondDisplay)fondDisplay.textContent=fmt(fond);
-    if(btnFond)btnFond.style.display=isMehdi?'inline':'none';
-  }
-
-  // Bouton "Corriger" caisse réelle — Mehdi uniquement
-  const btnCorriger=document.getElementById('btn-corriger-caisse');
-  if(btnCorriger)btnCorriger.style.display=isMehdi?'':'none';
 
   // Caisse réelle manuelle
   const cm=window._CASH_MANUEL;
   const manuelEl=document.getElementById('solde-manuel-val');
   const manuelMeta=document.getElementById('solde-manuel-meta');
   const ecartEl=document.getElementById('solde-ecart');
-  if(manuelEl){
-    if(cm&&typeof cm.amount==='number'){
-      manuelEl.textContent=fmt(cm.amount);
-      manuelEl.style.color=cm.amount>=0?'#4ade80':'#ff8080';
-      if(manuelMeta)manuelMeta.textContent='Saisi par '+cm.by+' · '+new Date(cm.ts).toLocaleDateString('fr-FR');
-      if(ecartEl){
-        const ecart=cm.amount-solde;
-        ecartEl.textContent=(ecart>=0?'Écart : +':'Écart : ')+fmt(Math.abs(ecart))+(Math.abs(ecart)>0.01?' ⚠️':'');
-        ecartEl.style.color=Math.abs(ecart)<1?'rgba(255,255,255,.35)':'#fbbf24';
-      }
-    }else{
-      manuelEl.textContent='Non saisi';
-      manuelEl.style.color='rgba(255,255,255,.35)';
-      if(manuelMeta)manuelMeta.textContent=isMehdi?'Appuyez sur Corriger':'—';
-      if(ecartEl)ecartEl.textContent='';
-    }
+  if(cm&&typeof cm.amount==='number'){
+    manuelEl.textContent=fmt(cm.amount);
+    manuelEl.style.color=cm.amount>=0?'#4ade80':'#ff8080';
+    manuelMeta.textContent='Saisi par '+cm.by+' · '+new Date(cm.ts).toLocaleDateString('fr-FR');
+    const ecart=cm.amount-solde;
+    ecartEl.textContent=(ecart>=0?'Écart : +':' Écart : ')+fmt(Math.abs(ecart))+(ecart!==0?' ⚠️':'');
+    ecartEl.style.color=Math.abs(ecart)<1?'rgba(255,255,255,.35)':'#fbbf24';
+  }else{
+    manuelEl.textContent='Non saisi';manuelEl.style.color='rgba(255,255,255,.35)';
+    manuelMeta.textContent='Appuyez sur Corriger';ecartEl.textContent='';
   }
 
   const list=dedFilter==='all'?window._D:window._D.filter(d=>d.who===dedFilter);
@@ -2476,7 +2296,6 @@ function renderDed(){
     </div>`;
   }).join('');
   document.getElementById('ded-sum').innerHTML=`${sorted.length} déduction(s) · Total : <strong style="color:var(--r)">${fmt(filtTotal)}</strong>`;
-
 }
 
 async function addDeduction(){
@@ -2501,8 +2320,7 @@ function deleteDed(key){
 // CORRECTION MANUELLE CAISSE
 // ════════════════════════════════════════
 function showCashManuelModal(){
-  if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Accès réservé au gérant');return;}
-  const theo=soldeTheorique();
+  const theo=cashSalesTotal()-totalDeds();
   const cm=window._CASH_MANUEL;
   document.getElementById('cash-manuel-theo').innerHTML=
     `<strong>Solde théorique calculé : ${fmt(theo)}</strong><br><span style="opacity:.8">Entrez le montant <strong>réellement présent</strong> dans la caisse en ce moment.</span>`;
@@ -2514,52 +2332,15 @@ function showCashManuelModal(){
   setTimeout(()=>document.getElementById('cash-manuel-inp')?.focus(),80);
 }
 function closeCashManuelModal(){document.getElementById('cash-manuel-ov').classList.remove('open');}
-
-function showFondCaisseModal(){
-  if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Accès réservé au gérant');return;}
-  const fond=window._FOND_CAISSE||0;
-  const cashIn=window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
-  const totalDed=window._D.reduce((a,d)=>a+d.amount,0);
-  document.getElementById('fond-modal-info').innerHTML=
-    `<strong>Ventes espèces : +${fmt(cashIn)}</strong><br>
-     <strong>Déductions : −${fmt(totalDed)}</strong><br>
-     <span style="opacity:.8">Le fond de caisse est le montant présent <em>avant</em> les ventes du jour (ex: monnaie de départ).</span>`;
-  document.getElementById('fond-inp').value=fond>0?fond.toFixed(2):'';
-  document.getElementById('fond-caisse-ov').classList.add('open');
-  setTimeout(()=>document.getElementById('fond-inp')?.focus(),80);
-}
-function closeFondCaisseModal(){document.getElementById('fond-caisse-ov').classList.remove('open');}
-async function saveFondCaisse(){
-  const v=parseFloat(document.getElementById('fond-inp').value);
-  if(isNaN(v)||v<0){warn('Montant invalide');return;}
-  await window.saveFondCaisseLocal(v);
-  closeFondCaisseModal();
-  renderDed();renderDash();
-  ok(`✅ Fond de caisse mis à jour : ${fmt(v)}`);
-}
-async function resetFondCaisse(){
-  await window.deleteFondCaisseLocal();
-  closeFondCaisseModal();
-  renderDed();renderDash();
-  ok('Fond de caisse remis à zéro');
-}
-function saveCashManuel(){
+async function saveCashManuel(){
   const v=parseFloat(document.getElementById('cash-manuel-inp').value);
   const note=(document.getElementById('cash-manuel-note').value||'').trim();
   if(isNaN(v)||v<0){warn('Montant invalide');return;}
-  const data={amount:v,note,ts:Date.now(),by:_currentUser?_currentUser.name:'—'};
-  window.saveCashManuelLocal(data);
-  closeCashManuelModal();
-  renderDed();
-  renderDash();
-  ok(`✅ Caisse réelle : ${fmt(v)}`);
+  await window.fbSaveCashManuel({amount:v,note,ts:Date.now(),by:_currentUser?_currentUser.name:'—'});
+  closeCashManuelModal();ok(`✅ Caisse réelle mise à jour : ${fmt(v)}`);
 }
-function resetCashManuel(){
-  window.deleteCashManuelLocal();
-  closeCashManuelModal();
-  renderDed();
-  renderDash();
-  ok('Correction manuelle supprimée');
+async function resetCashManuel(){
+  await window.fbDeleteCashManuel();closeCashManuelModal();ok('Correction manuelle supprimée');
 }
 
 // ════════════════════════════════════════
@@ -2664,33 +2445,6 @@ function renderHisto(){
     <span style="color:var(--g)">💵 ${fmt(cash)}</span>
     <span style="color:var(--bl)">💳 ${fmt(card)}</span>
     <span style="font-weight:700;color:var(--or)">Total : ${fmt(tot)}</span>`;
-
-  // Stats par vendeur (mode "all" ou mois passé)
-  const sellerBox=document.getElementById('h-seller-stats');
-  if(sellerBox&&(f==='all'||f.startsWith('prev_'))){
-    const map={};
-    list.forEach(s=>{
-      const who=s.seller||'Inconnu';
-      if(!map[who])map[who]={total:0,count:0,card:0,cash:0};
-      map[who].total+=s.total;map[who].count++;
-      if(s.payMode==='carte')map[who].card+=s.total;else map[who].cash+=s.total;
-    });
-    const sellers=Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
-    sellerBox.style.display=sellers.length?'block':'none';
-    sellerBox.innerHTML=sellers.length?`
-      <div style="font-size:13px;font-weight:700;font-family:'Syne',sans-serif;color:var(--txt);margin-bottom:10px">🧑‍💼 Stats par vendeur</div>
-      <div style="background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow:hidden;padding:4px 14px">
-        ${sellers.map(([who,s],i)=>`
-        <div class="seller-stat">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:14px;font-family:'Syne',sans-serif;font-weight:800;color:var(--or);width:18px">${i+1}</span>
-            <div><div style="font-weight:600;font-size:13px">${esc(who)}</div>
-            <div style="font-size:11px;color:var(--txt2)">${s.count} vente(s) · 💵 ${fmt(s.cash)} · 💳 ${fmt(s.card)}</div></div>
-          </div>
-          <div style="font-family:'Syne',sans-serif;font-weight:800;color:var(--or);font-size:15px">${fmt(s.total)}</div>
-        </div>`).join('')}
-      </div>`:''
-  }else if(sellerBox)sellerBox.style.display='none';
 
   // Panneau récap mensuel (affiché uniquement en vue "tout l'historique")
   renderMonthlySummary(f);
@@ -3836,70 +3590,6 @@ window.addEventListener('load',()=>{
   setInterval(fetchRate,60000);
   setInterval(updateClock,1000);
   updateClock();
-
-  // ══ NOTES ÉQUIPE ══
-  window.saveNotes=async function(){
-    const text=document.getElementById('notes-ta')?.value||'';
-    const data={text,ts:Date.now(),by:_currentUser?_currentUser.name:'—'};
-    window._NOTES=data;
-    await window.fbSaveNotes(data);
-    const meta=document.getElementById('notes-meta');
-    if(meta)meta.textContent='Sauvegardé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' par '+data.by;
-    ok('📝 Notes sauvegardées');
-  };
-
-  // ══ CLÔTURE JOURNALIÈRE ══
-  window.showClotureModal=function(){
-    if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Réservé au gérant');return;}
-    const dateKey=today();
-    const ts=todaySales();
-    const total=ts.reduce((a,s)=>a+s.total,0);
-    const cash=ts.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
-    const card=ts.filter(s=>s.payMode==='carte').reduce((a,s)=>a+s.total,0);
-    const deds=totalDeds();
-    const fond=window._FOND_CAISSE||0;
-    const soldeTh=(fond+cashSalesTotal())-deds;
-    document.getElementById('cloture-date-title').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-    document.getElementById('cloture-recap').innerHTML=`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${[['💰 CA Total',fmt(total),'var(--or)'],['💵 Espèces',fmt(cash),'var(--g)'],['💳 Carte',fmt(card),'var(--bl)'],['📦 Déductions',fmt(deds),'var(--r)'],['🏦 Caisse théorique',fmt(soldeTh),'var(--or)'],['🧾 Ventes',ts.length+' vente(s)','var(--txt)']].map(([l,v,c])=>`
-        <div style="background:var(--bg2);border-radius:8px;padding:10px">
-          <div style="font-size:11px;color:var(--txt2)">${l}</div>
-          <div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;color:${c}">${v}</div>
-        </div>`).join('')}
-      </div>`;
-    document.getElementById('cloture-note').value='';
-    document.getElementById('cloture-ov').classList.add('open');
-  };
-  window.saveCloture=async function(){
-    const dateKey=today();
-    if(window._CLOTURES&&window._CLOTURES[dateKey]){
-      if(!confirm('Une clôture existe déjà pour aujourd\'hui. Écraser ?'))return;
-    }
-    const ts=todaySales();
-    const total=ts.reduce((a,s)=>a+s.total,0);
-    const cash=ts.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
-    const card=ts.filter(s=>s.payMode==='carte').reduce((a,s)=>a+s.total,0);
-    const data={total,cash,card,deds:totalDeds(),fond:window._FOND_CAISSE||0,count:ts.length,note:document.getElementById('cloture-note').value,by:_currentUser.name,ts:Date.now()};
-    await window.fbSaveCloture(dateKey,data);
-    document.getElementById('cloture-ov').classList.remove('open');
-    ok('✅ Journée clôturée et archivée !');
-    renderDash();
-  };
-
-  // ══ RACCOURCIS CLAVIER ══
-  document.addEventListener('keydown',e=>{
-    const active=document.querySelector('.page.active');
-    if(!active)return;
-    const tag=document.activeElement?.tagName;
-    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
-    if(active.id==='p-caisse'){
-      if(e.code==='Space'){e.preventDefault();doSale();}
-      if(e.code==='Escape'){e.preventDefault();clearTicket();}
-    }
-    if(e.ctrlKey&&e.key==='d'){e.preventDefault();goPage('dash');}
-    if(e.ctrlKey&&e.key==='k'){e.preventDefault();goPage('caisse');}
-  });
 });
 </script>
 <div class="client-btn" onclick="window.open('client.html','_blank')">
@@ -3932,7 +3622,5 @@ window.addEventListener('load',()=>{
 .client-btn:active{
   transform:scale(.95);
 }
-</div>
 </style></body>
 </html>
- 
