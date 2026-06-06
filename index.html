@@ -626,7 +626,127 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
 .sync-dot.error{background:var(--r);animation:none}
 .page{animation:pageIn .22s cubic-bezier(.4,0,.2,1)}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-/* Accent profil */
+/* ── Micro-interactions & animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+@keyframes slideRight{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes countUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 var(--or-glow)}50%{box-shadow:0 0 16px 4px var(--or-glow)}}
+
+/* Page transitions */
+.page{animation:pageIn .28s cubic-bezier(.4,0,.2,1) both}
+.page.active{animation:fadeUp .26s cubic-bezier(.4,0,.2,1) both}
+
+/* Cards */
+.card{
+  border-radius:14px;background:var(--card);
+  border:1px solid var(--bd);padding:16px;
+  transition:box-shadow .22s,transform .22s,border-color .22s;
+  box-shadow:var(--sh);
+}
+.card:hover{box-shadow:var(--sh2);transform:translateY(-1px);border-color:var(--bd2)}
+.card:active{transform:translateY(0)}
+
+/* KPIs */
+.kpi{
+  transition:box-shadow .2s,transform .2s;
+  cursor:default;
+}
+.kpi:hover{box-shadow:var(--sh2);transform:translateY(-2px)}
+.kpi-v{animation:countUp .35s cubic-bezier(.4,0,.2,1) both}
+
+/* Buttons */
+.btn{
+  transition:all .18s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;
+}
+.btn::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:rgba(255,255,255,.08);opacity:0;transition:opacity .15s;
+}
+.btn:hover::after{opacity:1}
+.btn:active{transform:scale(.97)!important}
+.btn-r:hover{filter:brightness(1.1)}
+
+/* Nav buttons */
+.nav button{transition:all .18s cubic-bezier(.4,0,.2,1);position:relative}
+.nav button.active::after{
+  content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+  width:16px;height:2px;border-radius:1px;background:var(--or);
+  animation:fadeIn .2s ease both;
+}
+
+/* Solde box */
+.caisse-solde{
+  transition:box-shadow .3s;
+  animation:scaleIn .3s cubic-bezier(.4,0,.2,1) both;
+}
+
+/* Overlays / Modals */
+.ov{transition:opacity .2s}
+.ov.open{animation:fadeIn .2s ease both}
+.ov.open .modal,.ov.open [class*="modal"]{animation:scaleIn .25s cubic-bezier(.34,1.56,.64,1) both}
+
+/* Profile accent strip */
+#profile-accent{
+  height:3px;width:100%;position:absolute;top:0;left:0;
+  transition:background .5s cubic-bezier(.4,0,.2,1);
+  border-radius:0;opacity:.9;
+}
+.topbar{position:relative}
+
+/* Toast */
+.toast-wrap{animation:slideRight .25s cubic-bezier(.34,1.2,.64,1) both}
+
+/* Dashboard cards fade stagger */
+.dash-grid .card:nth-child(1){animation-delay:.05s}
+.dash-grid .card:nth-child(2){animation-delay:.1s}
+.dash-grid .card:nth-child(3){animation-delay:.15s}
+.kpis .kpi:nth-child(1){animation-delay:.04s}
+.kpis .kpi:nth-child(2){animation-delay:.08s}
+.kpis .kpi:nth-child(3){animation-delay:.12s}
+.kpis .kpi:nth-child(4){animation-delay:.16s}
+
+/* Product grid hover */
+.prod-item{transition:all .18s cubic-bezier(.4,0,.2,1)}
+.prod-item:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.prod-item:active{transform:scale(.97)}
+
+/* Ded items */
+.ded-item{transition:background .15s,box-shadow .15s}
+.ded-item:hover{box-shadow:var(--sh)}
+
+/* Stock rows */
+.stbl table tr{transition:background .12s}
+.stbl table tr:hover td{background:var(--bg2)!important}
+
+/* Solde values pulse on change */
+.solde-val{transition:color .3s,transform .3s}
+.solde-val.updated{animation:glow .6s ease}
+
+/* User card login hover */
+.user-card{transition:all .22s cubic-bezier(.4,0,.2,1)}
+
+/* Notes textarea */
+.notes-ta{transition:border-color .2s,box-shadow .2s}
+.notes-ta:focus{box-shadow:0 0 0 3px var(--or-glow)}
+
+/* Color picker grid circles */
+#color-picker-grid div{transition:transform .15s,box-shadow .15s}
+
+/* Input focus ring */
+.fi:focus,.fi:focus-visible{
+  outline:none;border-color:var(--or)!important;
+  box-shadow:0 0 0 3px var(--or-glow);
+}
+
+/* Scrollbar refined */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--txt3)}
 #profile-accent{height:3px;width:100%;position:absolute;top:0;left:0;transition:background .4s;border-radius:0}
 .topbar{position:relative}
 /* Notes équipe */
@@ -1231,50 +1351,48 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
 
     <!-- Mon compte -->
     <div class="card" style="margin-bottom:14px">
-      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;font-family:'Syne',sans-serif">👤 Mon compte</div>
-      <div id="params-my-profile" style="display:flex;align-items:center;gap:14px;margin-bottom:14px"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" onclick="showChangeCodeModal()">🔑 Changer mon code</button>
-        <button class="btn" onclick="showChangeColorModal()">🎨 Changer ma couleur</button>
-      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;font-family:'Syne',sans-serif">🔑 Sécurité du compte</div>
+      <div id="params-my-profile" style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:12px;background:var(--bg2);border-radius:10px"></div>
+      <button class="btn" onclick="showChangeCodeModal()">🔑 Changer mon code d'accès</button>
+      <div style="font-size:11px;color:var(--txt2);margin-top:8px">Les modifications de profil (photo, couleur, nom) se font dans l'onglet <strong>Profils</strong>.</div>
     </div>
 
     <!-- Apparence -->
     <div class="card" style="margin-bottom:14px">
       <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;font-family:'Syne',sans-serif">🎨 Apparence</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--bd)">
         <div>
           <div style="font-size:13px;font-weight:600">Thème</div>
-          <div style="font-size:11px;color:var(--txt2)">Clair ou sombre</div>
+          <div style="font-size:11px;color:var(--txt2)" id="params-theme-label">Mode clair actif</div>
         </div>
-        <button class="btn" id="params-theme-btn" onclick="toggleTheme();renderParams()">🌙 Basculer</button>
+        <button class="btn" onclick="toggleTheme();renderParams()">🌙 Basculer</button>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0">
         <div>
           <div style="font-size:13px;font-weight:600">Couleur d'accent</div>
-          <div style="font-size:11px;color:var(--txt2)">Personnalisez la couleur principale de l'interface</div>
+          <div style="font-size:11px;color:var(--txt2)">Couleur principale de l'interface</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="color" id="accent-color-picker" value="#E87D20" onchange="applyAccentColor(this.value)"
-            style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none">
-          <button class="btn" onclick="resetAccentColor()">↺ Reset</button>
+          <input type="color" id="accent-color-picker" value="#E87D20" oninput="applyAccentColor(this.value)"
+            style="width:40px;height:40px;border:2px solid var(--bd);border-radius:10px;cursor:pointer;background:none;padding:2px">
+          <button class="btn" onclick="resetAccentColor()">↺</button>
         </div>
       </div>
     </div>
 
-    <!-- Caisse -->
+    <!-- Caisse reset -->
     <div class="card" style="margin-bottom:14px">
       <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px;font-family:'Syne',sans-serif">💰 Caisse théorique</div>
-      <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">Réinitialise le compteur de la caisse théorique. L'historique est conservé mais ignoré dans les calculs.</div>
+      <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">Repart à zéro sans supprimer l'historique. Les ventes antérieures sont ignorées dans les calculs.</div>
       <div id="params-reset-info" style="margin-bottom:12px"></div>
-      <button class="btn btn-r" onclick="showResetCaisseModal()" style="font-size:13px">🔄 Réinitialiser la caisse</button>
+      <button class="btn btn-r" onclick="showResetCaisseModal()">🔄 Réinitialiser la caisse</button>
     </div>
 
-    <!-- Données -->
+    <!-- Export -->
     <div class="card">
       <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;font-family:'Syne',sans-serif">🗄️ Données</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" onclick="exportAllCSV()">📥 Export complet CSV</button>
+        <button class="btn" onclick="exportAllCSV()">📥 Export CSV complet</button>
         <button class="btn" onclick="exportJSON()">📦 Backup JSON</button>
       </div>
     </div>
@@ -2546,10 +2664,12 @@ async function setOrdStatus(key,i,status){
 function renderDed(){
   const isMehdi=_currentUser&&_currentUser.id==='mehdi';
   const dedFilter=document.getElementById('ded-filter').value;
+  const since=_resetTs();
+  // Utiliser les fonctions qui respectent le timestamp de reset
   const fond=window._FOND_CAISSE||0;
-  const cashIn=window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
-  const cardIn=window._S.filter(s=>s.payMode==='carte').reduce((a,s)=>a+s.total,0);
-  const totalDed=window._D.reduce((a,d)=>a+d.amount,0);
+  const cashIn=window._S.filter(s=>(!s.payMode||s.payMode==='especes')&&(s.ts||0)>=since).reduce((a,s)=>a+s.total,0);
+  const cardIn=window._S.filter(s=>s.payMode==='carte'&&(s.ts||0)>=since).reduce((a,s)=>a+s.total,0);
+  const totalDed=window._D.filter(d=>(d.ts||0)>=since).reduce((a,d)=>a+d.amount,0);
   const solde=(fond+cashIn)-totalDed;
 
   document.getElementById('solde-val').textContent=fmt(Math.abs(solde));
@@ -2667,30 +2787,34 @@ function closeCashManuelModal(){document.getElementById('cash-manuel-ov').classL
 // ════════════════════════════════════════
 function renderParams(){
   if(!_currentUser)return;
-  // Mon profil
   const p=_currentUser;
+  const color=p.color||'#E87D20';
   const avatarHtml=p.photo
-    ?`<img src="${p.photo}" style="width:48px;height:48px;border-radius:50%;object-fit:cover">`
-    :`<div style="width:48px;height:48px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;font-family:'Syne',sans-serif">${p.initials}</div>`;
+    ?`<img src="${p.photo}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ${color}">`
+    :`<div style="width:44px;height:44px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;font-family:'Syne',sans-serif;border:2px solid ${color}44">${p.initials||p.name?.slice(0,2).toUpperCase()||'?'}</div>`;
   const el=document.getElementById('params-my-profile');
-  if(el)el.innerHTML=`${avatarHtml}<div><div style="font-weight:700;font-size:15px">${p.name}</div><div style="font-size:12px;color:var(--txt2)">${p.role} · <span style="color:${p.color}">${p.authType==='pin'?'Code PIN':'Mot de passe'}</span></div></div>`;
+  if(el)el.innerHTML=`${avatarHtml}<div><div style="font-weight:700;font-size:14px">${p.name}</div><div style="font-size:12px;color:var(--txt2);margin-top:2px">${p.role} · <span style="color:${color}">${p.authType==='pin'?'Code PIN':p.authType==='schema'?'Schéma':'Mot de passe'}</span></div></div>`;
 
-  // Accent color picker
+  // Thème label
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const tlEl=document.getElementById('params-theme-label');
+  if(tlEl)tlEl.textContent=isDark?'Mode sombre actif':'Mode clair actif';
+
+  // Couleur accent
   const picker=document.getElementById('accent-color-picker');
   if(picker)picker.value=localStorage.getItem('kliko_accent')||'#E87D20';
 
-  // Reset caisse info
+  // Reset caisse
   const resetInfo=document.getElementById('params-reset-info');
   if(resetInfo){
     if(window._CAISSE_RESET){
       const d=new Date(window._CAISSE_RESET.ts);
-      resetInfo.innerHTML=`<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--txt2)">
-        Dernier reset : <strong>${d.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</strong>
-        par ${window._CAISSE_RESET.by}${window._CAISSE_RESET.note?' · '+window._CAISSE_RESET.note:''}
-        <button onclick="doUndoReset()" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:11px;margin-left:8px">↺ Annuler le reset</button>
+      resetInfo.innerHTML=`<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--txt2);display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span>Reset du <strong>${d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}</strong> par ${window._CAISSE_RESET.by}${window._CAISSE_RESET.note?' — '+window._CAISSE_RESET.note:''}</span>
+        <button onclick="doUndoReset()" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:11px;white-space:nowrap;font-weight:600">↺ Annuler</button>
       </div>`;
-    } else {
-      resetInfo.innerHTML=`<div style="font-size:12px;color:var(--txt2)">Aucun reset actif. La caisse compte depuis le début.</div>`;
+    }else{
+      resetInfo.innerHTML=`<div style="font-size:12px;color:var(--txt2)">Aucun reset actif — la caisse compte depuis le début.</div>`;
     }
   }
 }
@@ -2817,13 +2941,12 @@ function exportJSON(){
 // ════════════════════════════════════════
 function showCorrectTheoModal(){
   if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Réservé au gérant');return;}
-  const cashIn=window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
-  const deds=window._D.reduce((a,d)=>a+d.amount,0);
-  const fond=window._FOND_CAISSE||0;
-  const theo=fond+cashIn-deds;
+  const theo=soldeTheorique();
+  const cashIn=cashSalesTotal()-(window._FOND_CAISSE||0);
+  const deds=totalDeds();
   document.getElementById('correct-theo-info').innerHTML=
     `<strong>Théorique actuel : ${fmt(theo)}</strong><br>
-     Ventes espèces : ${fmt(cashIn)} · Déductions : ${fmt(deds)}<br>
+     Ventes espèces (depuis reset) : ${fmt(cashIn)} · Déductions : ${fmt(deds)}<br>
      <span style="opacity:.8">Entrez le montant que devrait afficher la caisse théorique.</span>`;
   document.getElementById('correct-theo-inp').value=theo.toFixed(2);
   document.getElementById('correct-theo-ov').classList.add('open');
@@ -2832,9 +2955,8 @@ function showCorrectTheoModal(){
 async function saveCorrectTheo(){
   const target=parseFloat(document.getElementById('correct-theo-inp').value);
   if(isNaN(target)){warn('Montant invalide');return;}
-  // fond nécessaire = target - (ventes espèces - déductions)
-  const cashIn=window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
-  const deds=window._D.reduce((a,d)=>a+d.amount,0);
+  const cashIn=cashSalesTotal()-(window._FOND_CAISSE||0);
+  const deds=totalDeds();
   const newFond=parseFloat((target-(cashIn-deds)).toFixed(2));
   await window.saveFondCaisseLocal(newFond);
   document.getElementById('correct-theo-ov').classList.remove('open');
@@ -2844,12 +2966,12 @@ async function saveCorrectTheo(){
 function showFondCaisseModal(){
   if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Accès réservé au gérant');return;}
   const fond=window._FOND_CAISSE||0;
-  const cashIn=window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
-  const totalDed=window._D.reduce((a,d)=>a+d.amount,0);
+  const cashIn=cashSalesTotal()-fond;
+  const totalDed=totalDeds();
   document.getElementById('fond-modal-info').innerHTML=
-    `<strong>Ventes espèces : +${fmt(cashIn)}</strong><br>
+    `<strong>Ventes espèces (depuis reset) : +${fmt(cashIn)}</strong><br>
      <strong>Déductions : −${fmt(totalDed)}</strong><br>
-     <span style="opacity:.8">Le fond de caisse est le montant présent <em>avant</em> les ventes du jour (ex: monnaie de départ).</span>`;
+     <span style="opacity:.8">Le fond de caisse est le montant présent <em>avant</em> les ventes (ex: monnaie de départ).</span>`;
   document.getElementById('fond-inp').value=fond>0?fond.toFixed(2):'';
   document.getElementById('fond-caisse-ov').classList.add('open');
   setTimeout(()=>document.getElementById('fond-inp')?.focus(),80);
@@ -4261,4 +4383,4 @@ window.addEventListener('load',()=>{
 }
 </div>
 </style></body>
-</html> 
+</html>
