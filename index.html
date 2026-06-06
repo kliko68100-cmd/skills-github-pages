@@ -919,6 +919,7 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
           🏦 Fond de caisse : <span id="fond-caisse-display" style="color:rgba(255,255,255,.7);font-weight:600">0,00 €</span>
           <button id="btn-edit-fond" onclick="showFondCaisseModal()" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);color:#f0a500;border-radius:4px;padding:1px 7px;font-size:10px;cursor:pointer;font-weight:700;margin-left:6px;display:none">✏️</button>
         </div>
+        <button id="btn-corriger-theorique" onclick="showCorrectTheoModal()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;margin-top:8px;display:none">✏️ Corriger</button>
       </div>
       <div id="solde-manuel-col" style="display:flex;flex-direction:column;align-items:center;gap:6px">
         <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px">Caisse réelle</div>
@@ -1223,6 +1224,62 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
     </div>
     <div class="profiles-grid" id="profiles-grid"></div>
   </div>
+
+  <!-- PARAMÈTRES -->
+  <div class="page" id="p-params">
+    <div style="font-size:18px;font-weight:800;font-family:'Syne',sans-serif;color:var(--txt);margin-bottom:20px">⚙️ Paramètres</div>
+
+    <!-- Mon compte -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;font-family:'Syne',sans-serif">👤 Mon compte</div>
+      <div id="params-my-profile" style="display:flex;align-items:center;gap:14px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="showChangeCodeModal()">🔑 Changer mon code</button>
+        <button class="btn" onclick="showChangeColorModal()">🎨 Changer ma couleur</button>
+      </div>
+    </div>
+
+    <!-- Apparence -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;font-family:'Syne',sans-serif">🎨 Apparence</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd)">
+        <div>
+          <div style="font-size:13px;font-weight:600">Thème</div>
+          <div style="font-size:11px;color:var(--txt2)">Clair ou sombre</div>
+        </div>
+        <button class="btn" id="params-theme-btn" onclick="toggleTheme();renderParams()">🌙 Basculer</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+        <div>
+          <div style="font-size:13px;font-weight:600">Couleur d'accent</div>
+          <div style="font-size:11px;color:var(--txt2)">Personnalisez la couleur principale de l'interface</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="color" id="accent-color-picker" value="#E87D20" onchange="applyAccentColor(this.value)"
+            style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none">
+          <button class="btn" onclick="resetAccentColor()">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Caisse -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px;font-family:'Syne',sans-serif">💰 Caisse théorique</div>
+      <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">Réinitialise le compteur de la caisse théorique. L'historique est conservé mais ignoré dans les calculs.</div>
+      <div id="params-reset-info" style="margin-bottom:12px"></div>
+      <button class="btn btn-r" onclick="showResetCaisseModal()" style="font-size:13px">🔄 Réinitialiser la caisse</button>
+    </div>
+
+    <!-- Données -->
+    <div class="card">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;font-family:'Syne',sans-serif">🗄️ Données</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="exportAllCSV()">📥 Export complet CSV</button>
+        <button class="btn" onclick="exportJSON()">📦 Backup JSON</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ═══ MODALS ═══ -->
@@ -1475,6 +1532,77 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   </div>
 </div>
 
+<!-- Reset caisse théorique -->
+<div class="ov" id="reset-caisse-ov">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-t">🔄 Réinitialiser la caisse théorique</div>
+    <div style="background:rgba(255,79,79,.08);border:1px solid rgba(255,79,79,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#ff6b6b;line-height:1.7">
+      <strong>⚠️ Attention</strong><br>
+      Les ventes et déductions <strong>antérieures</strong> au reset seront ignorées dans les calculs. L'historique reste consultable.<br>
+      <span id="reset-caisse-preview" style="display:block;margin-top:6px;color:var(--txt)"></span>
+    </div>
+    <div class="fg"><div class="fl">Note (optionnel)</div>
+      <input class="fi" type="text" id="reset-caisse-note" placeholder="ex: début juin, nouveau départ…">
+    </div>
+    <div class="mf" style="gap:8px">
+      <button class="mb" onclick="document.getElementById('reset-caisse-ov').classList.remove('open')">Annuler</button>
+      <button class="mb" onclick="doResetCaisse()" style="background:var(--r);color:#fff;border-color:var(--r)">🔄 Confirmer le reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Changer son code -->
+<div class="ov" id="change-code-ov">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-t">🔑 Changer mon code</div>
+    <div class="fg"><div class="fl">Type d'authentification</div>
+      <select class="fi" id="cc-auth-type" onchange="renderChangeCodeFields()">
+        <option value="pin">🔢 Code PIN</option>
+        <option value="password">🔡 Mot de passe</option>
+      </select>
+    </div>
+    <div id="cc-fields"></div>
+    <div class="mf" style="gap:8px;margin-top:14px">
+      <button class="mb" onclick="document.getElementById('change-code-ov').classList.remove('open')">Annuler</button>
+      <button class="mb c" onclick="saveChangeCode()">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Changer couleur profil -->
+<div class="ov" id="change-color-ov">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-t">🎨 Couleur de mon profil</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px" id="color-picker-grid"></div>
+    <div class="fg"><div class="fl">Couleur personnalisée</div>
+      <input type="color" id="custom-profile-color" class="fi" style="height:42px;padding:4px">
+    </div>
+    <div class="mf" style="gap:8px;margin-top:14px">
+      <button class="mb" onclick="document.getElementById('change-color-ov').classList.remove('open')">Annuler</button>
+      <button class="mb c" onclick="saveProfileColor()">✅ Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Correction caisse théorique (Mehdi uniquement) -->
+<div class="ov" id="correct-theo-ov">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-t">🧮 Corriger la caisse théorique</div>
+    <div id="correct-theo-info" style="background:rgba(255,200,0,.08);border:1px solid rgba(255,200,0,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#fbbf24;line-height:1.7"></div>
+    <div class="fg">
+      <div class="fl">Montant théorique souhaité (€)</div>
+      <input class="fi" type="number" id="correct-theo-inp" placeholder="ex: 30.00" step="0.01">
+    </div>
+    <div style="font-size:12px;color:var(--txt2);margin-bottom:12px;line-height:1.5">
+      L'app calcule automatiquement l'ajustement du fond de caisse pour atteindre ce montant.
+    </div>
+    <div class="mf" style="gap:8px">
+      <button class="mb" onclick="document.getElementById('correct-theo-ov').classList.remove('open')">Annuler</button>
+      <button class="mb c" onclick="saveCorrectTheo()">✅ Appliquer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Clôture journalière -->
 <div class="ov" id="cloture-ov">
   <div class="modal" style="max-width:440px">
@@ -1616,6 +1744,10 @@ window.startListeners=function(){
     window._CLOTURES=snap.exists()?snap.val():{};
     refreshPage();syncUI('ok');
   },()=>{});
+  onValue(ref(db,'caisse_reset'),snap=>{
+    window._CAISSE_RESET=snap.exists()?snap.val():null;
+    refreshPage();syncUI('ok');
+  },()=>{});
 };
 
 let _firstLoad=false;
@@ -1639,6 +1771,7 @@ function refreshPage(){
   else if(id==='p-rep')renderRepairs();
   else if(id==='p-factures')renderFactures();
   else if(id==='p-profils')renderProfiles();
+  else if(id==='p-params')renderParams();
 }
 
 async function fbSet(path,val){syncUI('sync');try{await set(ref(db,path),val);syncUI('ok');}catch(e){syncUI('err');showToast('⚠ Erreur sync');}}
@@ -1670,6 +1803,8 @@ window.fbDeleteInvoice=k=>fbRemove('invoices/'+k);
 window.fbSaveProfiles=p=>fbSet('profiles2',p);
 window.fbSaveNotes=d=>fbSet('notes_equipe',d);
 window.fbSaveCloture=(date,d)=>fbSet('clotures/'+date,d);
+window.fbSaveCaisseReset=d=>fbSet('caisse_reset',d);
+window.fbDeleteCaisseReset=()=>fbRemove('caisse_reset');
 
 console.log('Firebase v3 ✓');
 </script>
@@ -1726,6 +1861,7 @@ window._REP=[];window._REPK=[];
 window._INV=[];window._INVK=[];window._INVNUM=1;
 window._NOTES={text:'',ts:0,by:''};
 window._CLOTURES={};
+window._CAISSE_RESET=null;
 
 // Profils par défaut
 window._PROFILES={
@@ -1953,9 +2089,9 @@ function logout(){
 const PAGE_LABELS={
   dash:'📊 Tableau de bord',caisse:'🛒 Caisse',stock:'📦 Stock',
   cmd:'📋 Commandes',ded:'➖ Déductions',histo:'🕐 Historique',
-  'cc-admin':'🛍 Click & Collect',rep:'🔧 Réparations',factures:'🧾 Factures',calc:'🧮 Calculatrice',profils:'👥 Profils'
+  'cc-admin':'🛍 Click & Collect',rep:'🔧 Réparations',factures:'🧾 Factures',calc:'🧮 Calculatrice',profils:'👥 Profils',params:'⚙️ Paramètres'
 };
-const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','profils'];
+const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','profils','params'];
 const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc'];
 const VENDEUR_PAGES=['caisse','stock','calc'];
 
@@ -2011,9 +2147,15 @@ function weekSales(){
   const mon=new Date(now);mon.setDate(now.getDate()-(day-1));mon.setHours(0,0,0,0);
   return window._S.filter(s=>new Date(s.ts)>=mon);
 }
-function cashSalesTotal(){return (window._FOND_CAISSE||0)+window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);}
-function totalDeds(){return window._D.reduce((a,d)=>a+d.amount,0);}
-// Solde théorique = fond de caisse + ventes espèces - déductions
+function _resetTs(){return window._CAISSE_RESET?window._CAISSE_RESET.ts:0;}
+function cashSalesTotal(){
+  const since=_resetTs();
+  return (window._FOND_CAISSE||0)+window._S.filter(s=>(!s.payMode||s.payMode==='especes')&&(s.ts||0)>=since).reduce((a,s)=>a+s.total,0);
+}
+function totalDeds(){
+  const since=_resetTs();
+  return window._D.filter(d=>(d.ts||0)>=since).reduce((a,d)=>a+d.amount,0);
+}
 function soldeTheorique(){return cashSalesTotal()-totalDeds();}
 function saveGoal(){localStorage.setItem('kliko_goal',document.getElementById('goal-inp').value);}
 
@@ -2426,6 +2568,10 @@ function renderDed(){
     if(btnFond)btnFond.style.display=isMehdi?'inline':'none';
   }
 
+  // Bouton "Corriger" caisse théorique — Mehdi uniquement
+  const btnTheo=document.getElementById('btn-corriger-theorique');
+  if(btnTheo)btnTheo.style.display=isMehdi?'':'none';
+
   // Bouton "Corriger" caisse réelle — Mehdi uniquement
   const btnCorriger=document.getElementById('btn-corriger-caisse');
   if(btnCorriger)btnCorriger.style.display=isMehdi?'':'none';
@@ -2516,6 +2662,185 @@ function showCashManuelModal(){
 }
 function closeCashManuelModal(){document.getElementById('cash-manuel-ov').classList.remove('open');}
 
+// ════════════════════════════════════════
+// PAGE PARAMÈTRES
+// ════════════════════════════════════════
+function renderParams(){
+  if(!_currentUser)return;
+  // Mon profil
+  const p=_currentUser;
+  const avatarHtml=p.photo
+    ?`<img src="${p.photo}" style="width:48px;height:48px;border-radius:50%;object-fit:cover">`
+    :`<div style="width:48px;height:48px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;font-family:'Syne',sans-serif">${p.initials}</div>`;
+  const el=document.getElementById('params-my-profile');
+  if(el)el.innerHTML=`${avatarHtml}<div><div style="font-weight:700;font-size:15px">${p.name}</div><div style="font-size:12px;color:var(--txt2)">${p.role} · <span style="color:${p.color}">${p.authType==='pin'?'Code PIN':'Mot de passe'}</span></div></div>`;
+
+  // Accent color picker
+  const picker=document.getElementById('accent-color-picker');
+  if(picker)picker.value=localStorage.getItem('kliko_accent')||'#E87D20';
+
+  // Reset caisse info
+  const resetInfo=document.getElementById('params-reset-info');
+  if(resetInfo){
+    if(window._CAISSE_RESET){
+      const d=new Date(window._CAISSE_RESET.ts);
+      resetInfo.innerHTML=`<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--txt2)">
+        Dernier reset : <strong>${d.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</strong>
+        par ${window._CAISSE_RESET.by}${window._CAISSE_RESET.note?' · '+window._CAISSE_RESET.note:''}
+        <button onclick="doUndoReset()" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:11px;margin-left:8px">↺ Annuler le reset</button>
+      </div>`;
+    } else {
+      resetInfo.innerHTML=`<div style="font-size:12px;color:var(--txt2)">Aucun reset actif. La caisse compte depuis le début.</div>`;
+    }
+  }
+}
+
+function showResetCaisseModal(){
+  const theo=soldeTheorique();
+  const preview=document.getElementById('reset-caisse-preview');
+  if(preview)preview.innerHTML=`Solde actuel : <strong>${fmt(theo)}</strong> → après reset : <strong>${fmt(0)}</strong>`;
+  document.getElementById('reset-caisse-note').value='';
+  document.getElementById('reset-caisse-ov').classList.add('open');
+}
+async function doResetCaisse(){
+  if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Réservé au gérant');return;}
+  const note=document.getElementById('reset-caisse-note').value.trim();
+  const data={ts:Date.now(),by:_currentUser.name,note,fondBefore:window._FOND_CAISSE||0};
+  // Aussi remettre fond à 0
+  await window.saveFondCaisseLocal(0);
+  await window.fbSaveCaisseReset(data);
+  document.getElementById('reset-caisse-ov').classList.remove('open');
+  ok('✅ Caisse réinitialisée ! Théorique repart à zéro.');
+  renderParams();renderDed();renderDash();
+}
+async function doUndoReset(){
+  if(!confirm('Annuler le reset ? La caisse recomptera depuis le début.'))return;
+  await window.fbDeleteCaisseReset();
+  ok('Reset annulé');renderParams();renderDed();renderDash();
+}
+
+function showChangeCodeModal(){
+  const p=_currentUser;
+  const sel=document.getElementById('cc-auth-type');
+  if(sel)sel.value=p.authType||'pin';
+  renderChangeCodeFields();
+  document.getElementById('change-code-ov').classList.add('open');
+}
+function renderChangeCodeFields(){
+  const type=document.getElementById('cc-auth-type').value;
+  const el=document.getElementById('cc-fields');
+  if(type==='pin'){
+    el.innerHTML=`<div class="fg"><div class="fl">Nouveau code PIN (4 chiffres min)</div>
+      <input class="fi" type="password" id="cc-new" placeholder="••••" inputmode="numeric" maxlength="8"></div>
+      <div class="fg"><div class="fl">Confirmer le code</div>
+      <input class="fi" type="password" id="cc-confirm" placeholder="••••" inputmode="numeric" maxlength="8"></div>`;
+  } else {
+    el.innerHTML=`<div class="fg"><div class="fl">Nouveau mot de passe</div>
+      <input class="fi" type="password" id="cc-new" placeholder="Minimum 4 caractères"></div>
+      <div class="fg"><div class="fl">Confirmer</div>
+      <input class="fi" type="password" id="cc-confirm" placeholder="Répéter le mot de passe"></div>`;
+  }
+}
+async function saveChangeCode(){
+  const type=document.getElementById('cc-auth-type').value;
+  const nw=(document.getElementById('cc-new').value||'').trim();
+  const cf=(document.getElementById('cc-confirm').value||'').trim();
+  if(!nw||nw.length<4){warn('Code trop court (min 4 caractères)');return;}
+  if(nw!==cf){warn('Les codes ne correspondent pas');return;}
+  const id=_currentUser.id;
+  window._PROFILES[id]={...window._PROFILES[id],authType:type,auth:nw};
+  await window.fbSaveProfiles(window._PROFILES);
+  _currentUser=window._PROFILES[id];
+  document.getElementById('change-code-ov').classList.remove('open');
+  ok('✅ Code mis à jour ! Sera actif à la prochaine connexion.');
+}
+
+function showChangeColorModal(){
+  const colors=['#7c3aed','#E87D20','#3478d4','#22a367','#e63946','#2196f3','#ff6b6b','#06d6a0','#ffd166','#118ab2'];
+  const grid=document.getElementById('color-picker-grid');
+  if(grid)grid.innerHTML=colors.map(c=>`
+    <div onclick="document.getElementById('custom-profile-color').value='${c}'"
+      style="width:100%;aspect-ratio:1;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${c===(_currentUser.color||'#E87D20')?'#fff':'transparent'};box-shadow:0 0 0 2px ${c};transition:transform .15s"
+      onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform=''"></div>`).join('');
+  const picker=document.getElementById('custom-profile-color');
+  if(picker)picker.value=_currentUser.color||'#E87D20';
+  document.getElementById('change-color-ov').classList.add('open');
+}
+async function saveProfileColor(){
+  const color=document.getElementById('custom-profile-color').value;
+  const id=_currentUser.id;
+  window._PROFILES[id]={...window._PROFILES[id],color};
+  await window.fbSaveProfiles(window._PROFILES);
+  _currentUser=window._PROFILES[id];
+  // Mettre à jour l'accent dans la topbar
+  document.getElementById('profile-accent').style.background=`linear-gradient(90deg,${color},${color}88,transparent)`;
+  document.getElementById('change-color-ov').classList.remove('open');
+  ok('🎨 Couleur mise à jour !');renderParams();
+}
+
+function applyAccentColor(color){
+  document.documentElement.style.setProperty('--or',color);
+  localStorage.setItem('kliko_accent',color);
+}
+function resetAccentColor(){
+  document.documentElement.style.setProperty('--or','#E87D20');
+  localStorage.removeItem('kliko_accent');
+  const p=document.getElementById('accent-color-picker');
+  if(p)p.value='#E87D20';
+}
+function initAccentColor(){
+  const c=localStorage.getItem('kliko_accent');
+  if(c)document.documentElement.style.setProperty('--or',c);
+}
+
+function exportAllCSV(){
+  const rows=[['Date','Articles','Total','Paiement','Vendeur','Note']];
+  (window._S||[]).sort((a,b)=>b.ts-a.ts).forEach(s=>{
+    rows.push([new Date(s.ts).toLocaleString('fr-FR'),s.label||'',s.total.toFixed(2),s.payMode||'especes',s.seller||'',s.note||'']);
+  });
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`kliko_export_${today()}.csv`;a.click();
+  ok('📥 Export CSV téléchargé');
+}
+function exportJSON(){
+  const data={sales:window._S,deductions:window._D,products:window._P,clotures:window._CLOTURES,reset:window._CAISSE_RESET,exportedAt:new Date().toISOString()};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download=`kliko_backup_${today()}.json`;a.click();
+  ok('📦 Backup JSON téléchargé');
+}
+
+// ════════════════════════════════════════
+// CORRECTION CAISSE THÉORIQUE
+// ════════════════════════════════════════
+function showCorrectTheoModal(){
+  if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Réservé au gérant');return;}
+  const cashIn=window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
+  const deds=window._D.reduce((a,d)=>a+d.amount,0);
+  const fond=window._FOND_CAISSE||0;
+  const theo=fond+cashIn-deds;
+  document.getElementById('correct-theo-info').innerHTML=
+    `<strong>Théorique actuel : ${fmt(theo)}</strong><br>
+     Ventes espèces : ${fmt(cashIn)} · Déductions : ${fmt(deds)}<br>
+     <span style="opacity:.8">Entrez le montant que devrait afficher la caisse théorique.</span>`;
+  document.getElementById('correct-theo-inp').value=theo.toFixed(2);
+  document.getElementById('correct-theo-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('correct-theo-inp')?.select(),80);
+}
+async function saveCorrectTheo(){
+  const target=parseFloat(document.getElementById('correct-theo-inp').value);
+  if(isNaN(target)){warn('Montant invalide');return;}
+  // fond nécessaire = target - (ventes espèces - déductions)
+  const cashIn=window._S.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
+  const deds=window._D.reduce((a,d)=>a+d.amount,0);
+  const newFond=parseFloat((target-(cashIn-deds)).toFixed(2));
+  await window.saveFondCaisseLocal(newFond);
+  document.getElementById('correct-theo-ov').classList.remove('open');
+  renderDed();renderDash();
+  ok(`✅ Caisse théorique corrigée → ${fmt(target)}`);
+}
 function showFondCaisseModal(){
   if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Accès réservé au gérant');return;}
   const fond=window._FOND_CAISSE||0;
@@ -3829,6 +4154,7 @@ function updateClock(){const n=new Date();const el=document.getElementById('cloc
 // ════════════════════════════════════════
 window.addEventListener('load',()=>{
   initTheme();
+  initAccentColor();
   const g=localStorage.getItem('kliko_goal');
   if(g)document.getElementById('goal-inp').value=g;
   document.getElementById('ded-date').value=today();
