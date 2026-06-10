@@ -921,6 +921,9 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
       <div class="kpi"><span class="kpi-icon">📅</span><div class="kpi-l">Ventes semaine</div><div class="kpi-v" id="k-week">0,00 €</div><div class="kpi-s" id="k-week-n">0 vente(s)</div></div>
       <div class="kpi"><span class="kpi-icon">🏦</span><div class="kpi-l">Caisse espèces <button onclick="showCashManuelModal()" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);color:#f0a500;border-radius:5px;padding:1px 7px;font-size:10px;cursor:pointer;font-weight:700;vertical-align:middle">✏️</button></div><div class="kpi-v g" id="k-cash">0,00 €</div><div class="kpi-s" id="k-cash-s">après déductions</div></div>
       <div class="kpi"><span class="kpi-icon">📦</span><div class="kpi-l">Stock bas</div><div class="kpi-v r" id="k-low">0</div><div class="kpi-s">produit(s) &lt; 3u</div></div>
+      <div class="kpi"><span class="kpi-icon">📈</span><div class="kpi-l">Bénéfice brut</div><div class="kpi-v" id="k-profit">—</div><div class="kpi-s" id="k-profit-s">sur ventes avec marge</div></div>
+      <div class="kpi" onclick="goPage('ardoises')" style="cursor:pointer"><span class="kpi-icon">📋</span><div class="kpi-l">Ardoises en cours</div><div class="kpi-v r" id="k-ardoises">0</div><div class="kpi-s" id="k-ardoises-s">0,00 €</div></div>
+      <div class="kpi" onclick="goPage('clients')" style="cursor:pointer"><span class="kpi-icon">🤝</span><div class="kpi-l">Clients fidélité</div><div class="kpi-v" id="k-clients">0</div><div class="kpi-s">membres</div></div>
     </div>
     <div class="dash-grid">
       <div class="card"><div class="card-t">🕐 Dernières ventes <span id="d-date" style="font-size:11px;font-weight:400;color:var(--txt2)"></span></div><div id="d-sales"><div class="empty">Aucune vente</div></div></div>
@@ -975,6 +978,15 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
       </div>
       <div class="ticket">
         <div class="t-title">🧾 Ticket <span id="t-count" style="font-size:11px;font-weight:400;color:var(--txt2)">vide</span></div>
+        <!-- Client lié au ticket -->
+        <div id="t-client-bar" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg2);border-radius:9px;margin-bottom:8px;cursor:pointer" onclick="openClientPicker()">
+          <span id="t-client-icon" style="font-size:16px">👤</span>
+          <div style="flex:1">
+            <div id="t-client-name" style="font-size:12px;font-weight:600;color:var(--txt)">Aucun client lié</div>
+            <div id="t-client-pts" style="font-size:10px;color:var(--txt2)">Appuyer pour sélectionner</div>
+          </div>
+          <span id="t-client-clear" style="display:none;color:var(--r);font-size:16px;padding:2px 6px" onclick="clearClient(event)">✕</span>
+        </div>
         <div class="t-items" id="t-items"><div class="empty">Appuie sur un produit</div></div>
         <div class="t-sep"></div>
         <div>
@@ -982,10 +994,12 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
           <div class="pay-mode">
             <button class="pm-btn active" id="pm-especes" onclick="setPayMode('especes')">💵 Espèces</button>
             <button class="pm-btn" id="pm-carte" onclick="setPayMode('carte')">💳 Carte</button>
+            <button class="pm-btn" id="pm-ardoise" onclick="setPayMode('ardoise')">📋 Ardoise</button>
           </div>
         </div>
         <textarea class="note-input" rows="2" id="t-note" placeholder="Note…"></textarea>
         <div class="t-total"><span>Total</span><span id="t-total">0,00 €</span></div>
+        <div id="t-points-preview" style="display:none;font-size:11px;color:var(--g);text-align:right;margin-bottom:4px"></div>
         <div class="pay-btns">
           <button class="pbtn" onclick="clearTicket()">✕ Annuler</button>
           <button class="pbtn prim" onclick="doSale()">Valider ✓</button>
@@ -1005,7 +1019,7 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
       </div>
     </div>
     <div class="stbl"><table>
-      <thead><tr><th></th><th>Produit</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th>Statut</th><th>Actions</th></tr></thead>
+      <thead><tr><th></th><th>Produit</th><th>Catégorie</th><th>Prix vente</th><th>Marge</th><th>Stock</th><th>Statut</th><th>Actions</th></tr></thead>
       <tbody id="s-tbody"></tbody>
     </table></div>
   </div>
@@ -1039,7 +1053,10 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
           🏦 Fond de caisse : <span id="fond-caisse-display" style="color:rgba(255,255,255,.7);font-weight:600">0,00 €</span>
           <button id="btn-edit-fond" onclick="showFondCaisseModal()" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);color:#f0a500;border-radius:4px;padding:1px 7px;font-size:10px;cursor:pointer;font-weight:700;margin-left:6px;display:none">✏️</button>
         </div>
-        <button id="btn-corriger-theorique" onclick="showCorrectTheoModal()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;margin-top:8px;display:none">✏️ Corriger</button>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button id="btn-corriger-theorique" onclick="showCorrectTheoModal()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;display:none">✏️ Corriger</button>
+          <button id="btn-force-caisse" onclick="showForceCaisseModal()" style="background:rgba(78,158,255,.15);border:1px solid rgba(78,158,255,.3);color:var(--bl);border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:700;display:none">🔒 Forcer</button>
+        </div>
       </div>
       <div id="solde-manuel-col" style="display:flex;flex-direction:column;align-items:center;gap:6px">
         <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px">Caisse réelle</div>
@@ -1400,6 +1417,132 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
 
 </div>
 
+  <!-- CLIENTS / FIDÉLITÉ -->
+  <div class="page" id="p-clients">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:18px;font-weight:800;font-family:'Syne',sans-serif;color:var(--txt)">🤝 Clients & Fidélité</div>
+        <div id="clients-count" style="font-size:12px;color:var(--txt2);margin-top:2px"></div></div>
+      <button class="btn" onclick="showAddClientModal()">+ Nouveau client</button>
+    </div>
+    <div style="margin-bottom:12px"><input class="fi" type="text" id="clients-search" placeholder="🔍 Rechercher un client…" oninput="renderClients()" style="width:100%;max-width:320px"></div>
+    <div id="clients-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+  </div>
+
+  <!-- ARDOISES -->
+  <div class="page" id="p-ardoises">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:18px;font-weight:800;font-family:'Syne',sans-serif;color:var(--txt)">📋 Ardoises</div>
+        <div id="ardoises-total" style="font-size:12px;color:var(--txt2);margin-top:2px"></div></div>
+      <button class="btn" onclick="showAddArdoiseModal()">+ Nouvelle ardoise</button>
+    </div>
+    <div id="ardoises-list"></div>
+  </div>
+
+</div>
+
+<!-- ═══ CLIENT PICKER (caisse) ═══ -->
+<div class="ov" id="client-picker-ov">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-t">👤 Sélectionner un client</div>
+    <input class="fi" type="text" id="cp-search" placeholder="🔍 Nom ou téléphone…" oninput="renderClientPicker()" style="margin-bottom:12px">
+    <div id="cp-list" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+    <div class="mf" style="margin-top:14px;gap:8px">
+      <button class="mb" onclick="document.getElementById('client-picker-ov').classList.remove('open')">Fermer</button>
+      <button class="mb c" onclick="showAddClientModal(true)">+ Nouveau client</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD/EDIT CLIENT ═══ -->
+<div class="ov" id="add-client-ov">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-t" id="add-client-title">➕ Nouveau client</div>
+    <input type="hidden" id="edit-client-id">
+    <div class="fg"><div class="fl">Nom complet *</div><input class="fi" id="cl-name" placeholder="Sophie Martin"></div>
+    <div class="fg"><div class="fl">Téléphone</div><input class="fi" id="cl-phone" placeholder="06 12 34 56 78" type="tel"></div>
+    <div class="fg"><div class="fl">Email</div><input class="fi" id="cl-email" placeholder="sophie@email.com" type="email"></div>
+    <div class="mf" style="gap:8px;margin-top:14px">
+      <button class="mb" onclick="closeAddClientModal()">Annuler</button>
+      <button class="mb c" onclick="saveClient()">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CLIENT DETAIL ═══ -->
+<div class="ov" id="client-detail-ov">
+  <div class="modal" style="max-width:480px">
+    <div id="client-detail-content"></div>
+    <div class="mf" style="margin-top:14px;gap:8px">
+      <button class="mb" onclick="document.getElementById('client-detail-ov').classList.remove('open')">Fermer</button>
+      <button class="mb" id="btn-edit-client" onclick="">✏️ Modifier</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD ARDOISE ═══ -->
+<div class="ov" id="add-ardoise-ov">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-t">📋 Nouvelle ardoise</div>
+    <div class="fg"><div class="fl">Client *</div>
+      <select class="fi" id="ard-client">
+        <option value="">— Sélectionner un client —</option>
+      </select>
+    </div>
+    <div class="fg"><div class="fl">Description</div><input class="fi" id="ard-desc" placeholder="Café + sandwich…"></div>
+    <div class="fg"><div class="fl">Montant (€) *</div><input class="fi" type="number" id="ard-amount" placeholder="0.00" step="0.01" min="0"></div>
+    <div class="mf" style="gap:8px;margin-top:14px">
+      <button class="mb" onclick="document.getElementById('add-ardoise-ov').classList.remove('open')">Annuler</button>
+      <button class="mb c" onclick="saveArdoise()">✅ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FORCE CAISSE THÉORIQUE ═══ -->
+<div class="ov" id="force-caisse-ov">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-t">🔒 Forcer la caisse théorique</div>
+    <div style="background:rgba(78,158,255,.08);border:1px solid rgba(78,158,255,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--bl);line-height:1.7">
+      <strong>Mode admin — Mehdi uniquement</strong><br>
+      Ce montant s'affiche directement, sans aucun calcul. Il restera fixé jusqu'à ce que tu le supprimes.
+    </div>
+    <div class="fg"><div class="fl">Montant à afficher (€)</div>
+      <input class="fi" type="number" id="force-caisse-inp" placeholder="ex: 85.00" step="0.01">
+    </div>
+    <div class="fg"><div class="fl">Note (optionnel)</div>
+      <input class="fi" type="text" id="force-caisse-note" placeholder="ex: compté ce soir à 22h">
+    </div>
+    <div class="mf" style="gap:8px">
+      <button class="mb" onclick="document.getElementById('force-caisse-ov').classList.remove('open')">Annuler</button>
+      <button class="mb" id="btn-unforce" onclick="unForceCaisse()" style="display:none;color:var(--r);border-color:var(--r)">🗑 Supprimer le forçage</button>
+      <button class="mb c" onclick="saveForceCaisse()">🔒 Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🐍 EASTER EGG — SNAKE -->
+<div class="ov" id="snake-ov" style="z-index:9999">
+  <div style="background:#111;border:2px solid var(--or);border-radius:18px;padding:20px;text-align:center;position:relative;max-width:95vw">
+    <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--or);margin-bottom:4px">🐍 Mode Secret — Kliko Snake</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px">← ↑ → ↓ ou swipe · Échap pour quitter</div>
+    <canvas id="snake-canvas" width="300" height="300" style="border:1px solid rgba(255,255,255,.15);border-radius:8px;display:block;margin:0 auto"></canvas>
+    <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;padding:0 4px">
+      <div style="font-size:13px;color:rgba(255,255,255,.5)">Score : <strong id="snake-score" style="color:var(--or)">0</strong></div>
+      <div style="font-size:13px;color:rgba(255,255,255,.5)" id="snake-best"></div>
+      <button onclick="stopSnake()" style="background:rgba(255,79,106,.15);border:1px solid rgba(255,79,106,.3);color:#ff4f6a;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px">✕ Quitter</button>
+    </div>
+    <div id="snake-msg" style="font-size:13px;color:var(--or);margin-top:8px;min-height:18px;font-weight:700"></div>
+    <!-- Contrôles tactiles -->
+    <div style="display:grid;grid-template-columns:repeat(3,44px);gap:4px;margin:10px auto 0;width:fit-content">
+      <div></div>
+      <button onclick="snakeDir(0,-1)" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;width:44px;height:44px;color:#fff;font-size:18px;cursor:pointer">↑</button>
+      <div></div>
+      <button onclick="snakeDir(-1,0)" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;width:44px;height:44px;color:#fff;font-size:18px;cursor:pointer">←</button>
+      <button onclick="snakeDir(0,1)" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;width:44px;height:44px;color:#fff;font-size:18px;cursor:pointer">↓</button>
+      <button onclick="snakeDir(1,0)" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;width:44px;height:44px;color:#fff;font-size:18px;cursor:pointer">→</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MODALS ═══ -->
 <!-- Produit ajout/edit -->
 <div class="ov" id="add-ov">
@@ -1411,7 +1554,8 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
         <div class="fg"><div class="fl">Nom</div><input class="fi" id="n-name" placeholder="Nom du produit"></div>
         <div class="fg"><div class="fl">Catégorie</div><select class="fi" id="n-cat"></select></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="fg"><div class="fl">Prix (€)</div><input class="fi" type="number" id="n-price" placeholder="0.00" step="0.01"></div>
+          <div class="fg"><div class="fl">Prix de vente (€)</div><input class="fi" type="number" id="n-price" placeholder="0.00" step="0.01"></div>
+          <div class="fg"><div class="fl">Prix d'achat (€) <span style="color:var(--txt2);font-weight:400">— pour calcul marge</span></div><input class="fi" type="number" id="n-buyprice" placeholder="0.00" step="0.01"></div>
           <div class="fg"><div class="fl">Stock</div><input class="fi" type="number" id="n-stock" placeholder="0"></div>
         </div>
       </div>
@@ -1577,6 +1721,7 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
     <div class="receipt-total"><span>Total</span><span id="r-total" style="color:var(--or)"></span></div>
     <div style="text-align:center;margin-top:8px"><span id="r-mode" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px"></span></div>
     <div style="font-size:10px;color:var(--txt2);margin-top:6px" id="r-note"></div>
+    <div id="r-points"></div>
     <div style="margin-top:14px;display:flex;gap:7px">
       <button class="mb" style="flex:1;padding:10px" onclick="closeReceipt()">✓ Fermer</button>
     </div>
@@ -1866,6 +2011,20 @@ window.startListeners=function(){
     window._CAISSE_RESET=snap.exists()?snap.val():null;
     refreshPage();syncUI('ok');
   },()=>{});
+  onValue(ref(db,'caisse_force'),snap=>{
+    window._CAISSE_FORCE=snap.exists()?snap.val():null;
+    refreshPage();syncUI('ok');
+  },()=>{});
+  onValue(ref(db,'clients'),snap=>{
+    if(snap.exists()){const o=snap.val();window._CLIENTS=Object.values(o);window._CLIENTS_K=Object.keys(o);}
+    else{window._CLIENTS=[];window._CLIENTS_K=[];}
+    refreshPage();syncUI('ok');
+  },()=>syncUI('err'));
+  onValue(ref(db,'ardoises'),snap=>{
+    if(snap.exists()){const o=snap.val();window._ARDOISES=Object.values(o);window._ARDOISES_K=Object.keys(o);}
+    else{window._ARDOISES=[];window._ARDOISES_K=[];}
+    refreshPage();syncUI('ok');
+  },()=>syncUI('err'));
 };
 
 let _firstLoad=false;
@@ -1890,6 +2049,8 @@ function refreshPage(){
   else if(id==='p-factures')renderFactures();
   else if(id==='p-profils')renderProfiles();
   else if(id==='p-params')renderParams();
+  else if(id==='p-clients')renderClients();
+  else if(id==='p-ardoises')renderArdoises();
 }
 
 async function fbSet(path,val){syncUI('sync');try{await set(ref(db,path),val);syncUI('ok');}catch(e){syncUI('err');showToast('⚠ Erreur sync');}}
@@ -1923,6 +2084,13 @@ window.fbSaveNotes=d=>fbSet('notes_equipe',d);
 window.fbSaveCloture=(date,d)=>fbSet('clotures/'+date,d);
 window.fbSaveCaisseReset=d=>fbSet('caisse_reset',d);
 window.fbDeleteCaisseReset=()=>fbRemove('caisse_reset');
+window.fbSaveCaisseForce=d=>fbSet('caisse_force',d);
+window.fbDeleteCaisseForce=()=>fbRemove('caisse_force');
+window.fbSaveClient=(id,c)=>fbSet('clients/'+id,c);
+window.fbDeleteClient=id=>fbRemove('clients/'+id);
+window.fbSaveArdoise=(id,a)=>fbSet('ardoises/'+id,a);
+window.fbUpdateArdoise=(id,v)=>fbUpdate('ardoises/'+id,v);
+window.fbDeleteArdoise=id=>fbRemove('ardoises/'+id);
 
 console.log('Firebase v3 ✓');
 </script>
@@ -1980,6 +2148,10 @@ window._INV=[];window._INVK=[];window._INVNUM=1;
 window._NOTES={text:'',ts:0,by:''};
 window._CLOTURES={};
 window._CAISSE_RESET=null;
+window._CLIENTS=[];window._CLIENTS_K=[];
+window._ARDOISES=[];window._ARDOISES_K=[];
+window._CAISSE_FORCE=null;
+let _currentClient=null; // client lié au ticket en cours
 
 // Profils par défaut
 window._PROFILES={
@@ -2207,10 +2379,12 @@ function logout(){
 const PAGE_LABELS={
   dash:'📊 Tableau de bord',caisse:'🛒 Caisse',stock:'📦 Stock',
   cmd:'📋 Commandes',ded:'➖ Déductions',histo:'🕐 Historique',
-  'cc-admin':'🛍 Click & Collect',rep:'🔧 Réparations',factures:'🧾 Factures',calc:'🧮 Calculatrice',profils:'👥 Profils',params:'⚙️ Paramètres'
+  'cc-admin':'🛍 Click & Collect',rep:'🔧 Réparations',factures:'🧾 Factures',
+  calc:'🧮 Calculatrice',profils:'👥 Profils',params:'⚙️ Paramètres',
+  clients:'🤝 Clients',ardoises:'📋 Ardoises'
 };
-const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','profils','params'];
-const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc'];
+const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','profils','params','clients','ardoises'];
+const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','clients','ardoises'];
 const VENDEUR_PAGES=['caisse','stock','calc'];
 
 function buildNav(){
@@ -2274,7 +2448,12 @@ function totalDeds(){
   const since=_resetTs();
   return window._D.filter(d=>(d.ts||0)>=since).reduce((a,d)=>a+d.amount,0);
 }
-function soldeTheorique(){return cashSalesTotal()-totalDeds();}
+// Forcer = Mehdi peut imposer un montant qui écrase tout calcul
+function soldeTheorique(){
+  if(window._CAISSE_FORCE&&typeof window._CAISSE_FORCE.amount==='number')
+    return window._CAISSE_FORCE.amount;
+  return cashSalesTotal()-totalDeds();
+}
 function saveGoal(){localStorage.setItem('kliko_goal',document.getElementById('goal-inp').value);}
 
 function renderDash(){
@@ -2320,6 +2499,27 @@ function renderDash(){
   if(cashEditBtn)cashEditBtn.style.display=isMehdi?'':'none';
   document.getElementById('k-low').textContent = window._P.filter(p=>p.stock<3&&p.cat!=='Café').length;
   document.getElementById('goal-pct').textContent = pct+'%';
+
+  // Bénéfice brut
+  const profit=todayProfit();
+  const profitEl=document.getElementById('k-profit');
+  if(profitEl){
+    profitEl.textContent=profit>0?fmt(profit):'—';
+    profitEl.className='kpi-v '+(profit>0?'g':'');
+  }
+  const profitS=document.getElementById('k-profit-s');
+  if(profitS)profitS.textContent=profit>0?'aujourd\'hui':'Renseignez les prix d\'achat';
+
+  // Ardoises
+  const unpaidArd=window._ARDOISES.filter(a=>!a.paid);
+  const ardEl=document.getElementById('k-ardoises');
+  if(ardEl)ardEl.textContent=unpaidArd.length;
+  const ardS=document.getElementById('k-ardoises-s');
+  if(ardS)ardS.textContent=fmt(unpaidArd.reduce((s,a)=>s+a.amount,0))+' dû';
+
+  // Clients
+  const clEl=document.getElementById('k-clients');
+  if(clEl)clEl.textContent=window._CLIENTS.length;
   document.getElementById('goal-bar').style.width = pct+'%';
 
   const dn = document.getElementById('d-date');
@@ -2455,28 +2655,70 @@ function renderTicket(){
   document.getElementById('t-total').textContent=fmt(_ticket.reduce((a,t)=>a+t.price*t.qty,0));
 }
 function chQty(i,d){_ticket[i].qty+=d;if(_ticket[i].qty<=0)_ticket.splice(i,1);renderTicket();}
-function clearTicket(){_ticket=[];renderTicket();const nt=document.getElementById('t-note');if(nt)nt.value='';}
+function clearTicket(){
+  _ticket=[];_currentClient=null;
+  renderTicket();
+  const nt=document.getElementById('t-note');if(nt)nt.value='';
+  updateClientBar();
+}
 async function doSale(){
   if(!_ticket.length){warn('Ticket vide');return;}
   const total=_ticket.reduce((a,t)=>a+t.price*t.qty,0);
   const label=_ticket.length===1?_ticket[0].name:_ticket.length+' articles';
   const note=document.getElementById('t-note').value;
+
+  // Mode ardoise : nécessite un client
+  if(_payMode==='ardoise'){
+    if(!_currentClient){warn('Sélectionner un client pour une ardoise');openClientPicker();return;}
+    await saveArdoise(_currentClient.id||clientKey(_currentClient),_currentClient.name,total,label);
+  }
+
+  // Déduire stock
   _ticket.forEach(t=>{const p=window._P.find(x=>x.id===t.id);if(p&&p.cat!=='Café')p.stock=Math.max(0,p.stock-t.qty);});
-  const sale={ts:Date.now(),date:today(),label,total,note,seller:_currentUser.name,payMode:_payMode,items:_ticket.map(t=>({...t}))};
-  // Affichage immédiat — pas besoin d'attendre Firebase
-  showReceipt(sale);clearTicket();renderCaisse();
-  // Les 2 écritures Firebase tournent en parallèle en arrière-plan
+
+  const clientId=_currentClient?clientKey(_currentClient)||_currentClient.id:null;
+  const sale={ts:Date.now(),date:today(),label,total,note,seller:_currentUser.name,
+    payMode:_payMode,items:_ticket.map(t=>({...t})),clientId,clientName:_currentClient?.name||null};
+
+  // Créditer points fidélité
+  if(_currentClient&&_payMode!=='ardoise'){
+    const ptsEarned=Math.floor(total*10);
+    const clientIdx=window._CLIENTS.findIndex(c=>clientKey(c)===clientId||(c.id&&c.id===_currentClient.id));
+    if(clientIdx>-1){
+      const c=window._CLIENTS[clientIdx];
+      const updated={...c,points:(c.points||0)+ptsEarned,totalSpent:(c.totalSpent||0)+total,
+        visits:(c.visits||0)+1,lastVisit:today()};
+      window._CLIENTS[clientIdx]=updated;
+      const cKey=window._CLIENTS_K[clientIdx];
+      if(cKey)window.fbSaveClient(cKey,updated);
+      sale.ptsEarned=ptsEarned;
+    }
+  }
+
+  const prevClient=_currentClient;
+  showReceipt(sale,prevClient);
+  clearTicket();renderCaisse();
   Promise.all([window.fbSaveProducts(),window.fbSaveSale(sale)]);
+  setTimeout(checkDailyGoal,500);
 }
-function showReceipt(sale){
+function showReceipt(sale,client=null){
   document.getElementById('r-date').textContent=new Date(sale.ts).toLocaleString('fr-FR');
   document.getElementById('r-lines').innerHTML=sale.items.map(it=>`<div class="receipt-line"><span>${it.name} ×${it.qty}</span><span>${fmt(it.price*it.qty)}</span></div>`).join('');
   document.getElementById('r-total').textContent=fmt(sale.total);
-  const m=sale.payMode==='carte';
+  const m=sale.payMode==='carte';const isArd=sale.payMode==='ardoise';
   const rm=document.getElementById('r-mode');
-  rm.textContent=m?'💳 Carte':'💵 Espèces';
-  rm.style.background=m?'var(--bl2)':'var(--g2)';rm.style.color=m?'var(--bl)':'var(--g)';
+  rm.textContent=isArd?'📋 Ardoise':m?'💳 Carte':'💵 Espèces';
+  rm.style.background=isArd?'var(--purple2,rgba(155,114,255,.15))':m?'var(--bl2)':'var(--g2)';
+  rm.style.color=isArd?'#9b72ff':m?'var(--bl)':'var(--g)';
   document.getElementById('r-note').textContent=sale.note?'Note : '+sale.note:'';
+  // Points fidélité
+  const ptsEl=document.getElementById('r-points');
+  if(ptsEl){
+    if(client&&sale.ptsEarned>0){
+      const rank=getClientRank((client.points||0)+sale.ptsEarned);
+      ptsEl.innerHTML=`<div style="background:var(--g2,rgba(45,217,143,.1));color:var(--g);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;text-align:center;margin-top:8px">⭐ +${sale.ptsEarned} pts pour ${esc(client.name)} · ${rank.icon} ${rank.label}</div>`;
+    } else ptsEl.innerHTML='';
+  }
   document.getElementById('receipt-ov').classList.add('open');
 }
 function closeReceipt(){document.getElementById('receipt-ov').classList.remove('open');ok('✓ Vente enregistrée !');}
@@ -2494,11 +2736,15 @@ function renderStock(filter=''){
     const st=p.stock===0?'br':p.stock<3?'bw':'bg';
     const sl=p.stock===0?'Épuisé':p.stock<3?'Stock bas':'En stock';
     const canEdit=_currentUser&&_currentUser.role!=='vendeur';
+    const mPct=marginPct(p);
+    const mColor=marginColor(mPct);
+    const mLabel=mPct!==null?`<span style="color:${mColor};font-weight:700;font-size:12px">${mPct}%</span><div style="font-size:10px;color:var(--txt3)">${fmt(p.buyPrice||0)} achat</div>`:`<span style="color:var(--txt3);font-size:11px">—</span>`;
     return `<tr>
       <td>${prodImgThumb(p)}</td>
       <td style="font-weight:600">${p.name}</td>
       <td style="color:var(--txt2);font-size:11px">${p.cat}</td>
       <td style="color:var(--or);font-weight:700;font-family:'Syne',sans-serif">${fmt(p.price)}</td>
+      <td>${mLabel}</td>
       <td><div style="display:flex;align-items:center;gap:5px"><input class="eq" type="number" value="${p.stock}" min="0" onchange="updStock(${p.id},this.value)"><span style="font-size:11px;color:var(--txt2)">u.</span></div></td>
       <td><span class="badge ${st}">${sl}</span></td>
       <td><div style="display:flex;gap:5px">
@@ -2521,7 +2767,8 @@ function delProd(id){
 function openAddModal(){
   document.getElementById('add-modal-title').textContent='➕ Ajouter un produit';
   document.getElementById('edit-prod-id').value='';
-  document.getElementById('n-name').value='';document.getElementById('n-price').value='';document.getElementById('n-stock').value='';
+  document.getElementById('n-name').value='';document.getElementById('n-price').value='';
+  document.getElementById('n-stock').value='';document.getElementById('n-buyprice').value='';
   document.getElementById('n-img-url').value='';clearImgPreview();
   document.getElementById('n-cat').innerHTML=window._CATS.map(c=>`<option>${c}</option>`).join('');
   document.getElementById('add-ov').classList.add('open');
@@ -2530,7 +2777,9 @@ function openEditProduct(id){
   const p=window._P.find(x=>x.id===id);if(!p)return;
   document.getElementById('add-modal-title').textContent='✏️ Modifier le produit';
   document.getElementById('edit-prod-id').value=id;
-  document.getElementById('n-name').value=p.name;document.getElementById('n-price').value=p.price;document.getElementById('n-stock').value=p.stock;
+  document.getElementById('n-name').value=p.name;document.getElementById('n-price').value=p.price;
+  document.getElementById('n-stock').value=p.stock;
+  document.getElementById('n-buyprice').value=p.buyPrice||'';
   document.getElementById('n-cat').innerHTML=window._CATS.map(c=>`<option ${c===p.cat?'selected':''}>${c}</option>`).join('');
   document.getElementById('n-img-url').value='';
   clearImgPreview();
@@ -2573,6 +2822,7 @@ async function saveProduct(){
   const name=document.getElementById('n-name').value.trim();
   const cat=document.getElementById('n-cat').value;
   const price=parseFloat(document.getElementById('n-price').value)||0;
+  const buyPrice=parseFloat(document.getElementById('n-buyprice').value)||0;
   const stock=parseInt(document.getElementById('n-stock').value)||0;
   const urlVal=document.getElementById('n-img-url').value.trim();
   const img=_imgData||(urlVal||null);
@@ -2580,10 +2830,10 @@ async function saveProduct(){
   const editId=document.getElementById('edit-prod-id').value;
   if(editId){
     const p=window._P.find(x=>x.id===parseInt(editId));
-    if(p){p.name=name;p.cat=cat;p.price=price;p.stock=stock;p.img=img;}
+    if(p){p.name=name;p.cat=cat;p.price=price;p.stock=stock;p.img=img;p.buyPrice=buyPrice||p.buyPrice;}
     ok('Produit modifié ✓');
   } else {
-    window._P.push({id:window._NPI++,name,cat,price,stock,img});
+    window._P.push({id:window._NPI++,name,cat,price,buyPrice,stock,img});
     ok('Produit ajouté ✓');
   }
   await window.fbSaveProducts();
@@ -2688,6 +2938,10 @@ function renderDed(){
     if(btnFond)btnFond.style.display=isMehdi?'inline':'none';
   }
 
+  // Bouton "Forcer" caisse théorique — Mehdi uniquement
+  const btnForce=document.getElementById('btn-force-caisse');
+  if(btnForce)btnForce.style.display=isMehdi?'':'none';
+
   // Bouton "Corriger" caisse théorique — Mehdi uniquement
   const btnTheo=document.getElementById('btn-corriger-theorique');
   if(btnTheo)btnTheo.style.display=isMehdi?'':'none';
@@ -2767,6 +3021,292 @@ function deleteDed(key){
 // ════════════════════════════════════════
 // CORRECTION MANUELLE CAISSE
 // ════════════════════════════════════════
+// ════════════════════════════════════════
+// FORCE CAISSE THÉORIQUE (Mehdi admin)
+// ════════════════════════════════════════
+function showForceCaisseModal(){
+  if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Réservé à Mehdi');return;}
+  const cf=window._CAISSE_FORCE;
+  document.getElementById('force-caisse-inp').value=cf?cf.amount.toFixed(2):'';
+  document.getElementById('force-caisse-note').value=cf?cf.note||'':'';
+  const unfBtn=document.getElementById('btn-unforce');
+  if(unfBtn)unfBtn.style.display=cf?'':'none';
+  document.getElementById('force-caisse-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('force-caisse-inp')?.select(),80);
+}
+async function saveForceCaisse(){
+  const v=parseFloat(document.getElementById('force-caisse-inp').value);
+  if(isNaN(v)){warn('Montant invalide');return;}
+  const note=document.getElementById('force-caisse-note').value.trim();
+  const data={amount:v,note,by:'Mehdi',ts:Date.now()};
+  window._CAISSE_FORCE=data;
+  await window.fbSaveCaisseForce(data);
+  document.getElementById('force-caisse-ov').classList.remove('open');
+  renderDed();renderDash();
+  ok(`🔒 Caisse théorique fixée à ${fmt(v)}`);
+}
+async function unForceCaisse(){
+  window._CAISSE_FORCE=null;
+  await window.fbDeleteCaisseForce();
+  document.getElementById('force-caisse-ov').classList.remove('open');
+  renderDed();renderDash();
+  ok('Forçage supprimé — retour au calcul automatique');
+}
+
+// ════════════════════════════════════════
+// CLIENTS & FIDÉLITÉ
+// ════════════════════════════════════════
+const RANKS=[
+  {key:'bronze',label:'Bronze',icon:'🥉',min:0,max:199,color:'#cd7f32'},
+  {key:'silver',label:'Argent',icon:'🥈',min:200,max:699,color:'#a8a9ad'},
+  {key:'gold',label:'Or',icon:'🥇',min:700,max:1999,color:'#f0a500'},
+  {key:'platinum',label:'Platine',icon:'💎',min:2000,max:Infinity,color:'#8ecae6'},
+];
+function getClientRank(pts){return RANKS.find(r=>pts>=r.min&&pts<=r.max)||RANKS[0];}
+function clientKey(c){return window._CLIENTS_K[window._CLIENTS.indexOf(c)]||null;}
+
+function renderClients(){
+  const q=(document.getElementById('clients-search')?.value||'').toLowerCase();
+  const list=window._CLIENTS.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.phone||'').includes(q));
+  const el=document.getElementById('clients-grid');if(!el)return;
+  const count=document.getElementById('clients-count');
+  if(count)count.textContent=`${window._CLIENTS.length} client(s) · ${window._CLIENTS.reduce((a,c)=>a+(c.points||0),0)} pts distribués`;
+  el.innerHTML=list.length?list.map(c=>{
+    const rank=getClientRank(c.points||0);
+    const nextRank=RANKS[RANKS.indexOf(rank)+1];
+    const pct=nextRank?Math.min(Math.round(((c.points||0)-rank.min)/(nextRank.min-rank.min)*100),100):100;
+    const initials=(c.name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const key=clientKey(c);
+    return `<div class="card" style="cursor:pointer" onclick="showClientDetail('${key}')">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div style="width:44px;height:44px;border-radius:50%;background:${rank.color}22;color:${rank.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;border:2px solid ${rank.color}44;flex-shrink:0">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px">${esc(c.name)}</div>
+          <div style="font-size:11px;color:var(--txt2)">${c.phone||'—'}</div>
+        </div>
+        <div style="text-align:right"><div style="font-size:20px">${rank.icon}</div><div style="font-size:10px;color:${rank.color};font-weight:700">${rank.label}</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);margin-bottom:7px">
+        <span>⭐ <strong style="color:var(--txt)">${c.points||0} pts</strong></span>
+        <span>💰 ${fmt(c.totalSpent||0)}</span>
+        <span>🛒 ${c.visits||0}</span>
+      </div>
+      <div style="background:var(--bd);border-radius:4px;height:5px;overflow:hidden">
+        <div style="background:${rank.color};height:100%;width:${pct}%;border-radius:4px;transition:width .5s"></div>
+      </div>
+      ${nextRank?`<div style="font-size:10px;color:var(--txt3);margin-top:3px;text-align:right">${nextRank.min-(c.points||0)} pts → ${nextRank.icon}</div>`:`<div style="font-size:10px;color:var(--g);margin-top:3px;text-align:right">💎 Max !</div>`}
+    </div>`;
+  }).join(''):`<div class="empty" style="grid-column:1/-1">Aucun client</div>`;
+}
+
+function showClientDetail(key){
+  const idx=window._CLIENTS_K.indexOf(key);if(idx===-1)return;
+  const c=window._CLIENTS[idx];
+  const rank=getClientRank(c.points||0);
+  const sales=(window._S||[]).filter(s=>s.clientId===key).sort((a,b)=>b.ts-a.ts).slice(0,5);
+  document.getElementById('client-detail-content').innerHTML=`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+      <div style="width:52px;height:52px;border-radius:50%;background:${rank.color}22;color:${rank.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;border:2px solid ${rank.color}44">
+        ${(c.name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}</div>
+      <div><div style="font-weight:800;font-size:16px">${esc(c.name)}</div>
+        <div style="font-size:12px;color:var(--txt2)">${c.phone||''} ${c.email?'· '+c.email:''}</div>
+        <div style="margin-top:4px">${rank.icon} <span style="color:${rank.color};font-weight:700;font-size:12px">${rank.label}</span> · ⭐ <strong>${c.points||0}</strong> pts</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      ${[['💰 CA total',fmt(c.totalSpent||0),'var(--or)'],['🛒 Visites',c.visits||0,'var(--txt)'],['📅 Dernière',c.lastVisit?new Date(c.lastVisit).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}):'—','var(--txt2)']].map(([l,v,color])=>`
+      <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--txt2)">${l}</div>
+        <div style="font-weight:800;font-size:14px;font-family:'Syne',sans-serif;color:${color}">${v}</div>
+      </div>`).join('')}
+    </div>
+    ${sales.length?`<div style="font-size:12px;font-weight:600;color:var(--txt);margin-bottom:8px">Dernières ventes</div>${sales.map(s=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd);font-size:12px"><span style="color:var(--txt2)">${new Date(s.ts).toLocaleDateString('fr-FR')}</span><span>${esc(s.label)}</span><span style="color:var(--or);font-weight:700">${fmt(s.total)}</span></div>`).join('')}`:''}`;
+  document.getElementById('btn-edit-client').onclick=()=>{document.getElementById('client-detail-ov').classList.remove('open');editClientModal(key);};
+  document.getElementById('client-detail-ov').classList.add('open');
+}
+
+function showAddClientModal(fromCaisse=false){
+  document.getElementById('add-client-title').textContent='➕ Nouveau client';
+  document.getElementById('edit-client-id').value='';
+  ['cl-name','cl-phone','cl-email'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('add-client-ov')._fromCaisse=fromCaisse;
+  document.getElementById('add-client-ov').classList.add('open');
+  setTimeout(()=>document.getElementById('cl-name')?.focus(),80);
+}
+function closeAddClientModal(){document.getElementById('add-client-ov').classList.remove('open');}
+function editClientModal(key){
+  const idx=window._CLIENTS_K.indexOf(key);if(idx===-1)return;
+  const c=window._CLIENTS[idx];
+  document.getElementById('add-client-title').textContent='✏️ Modifier le client';
+  document.getElementById('edit-client-id').value=key;
+  document.getElementById('cl-name').value=c.name||'';
+  document.getElementById('cl-phone').value=c.phone||'';
+  document.getElementById('cl-email').value=c.email||'';
+  document.getElementById('add-client-ov').classList.add('open');
+}
+async function saveClient(){
+  const name=document.getElementById('cl-name').value.trim();
+  if(!name){warn('Nom requis');return;}
+  const phone=document.getElementById('cl-phone').value.trim();
+  const email=document.getElementById('cl-email').value.trim();
+  const editKey=document.getElementById('edit-client-id').value;
+  const fromCaisse=document.getElementById('add-client-ov')._fromCaisse;
+  if(editKey){
+    const idx=window._CLIENTS_K.indexOf(editKey);
+    if(idx>-1){window._CLIENTS[idx]={...window._CLIENTS[idx],name,phone,email};await window.fbSaveClient(editKey,window._CLIENTS[idx]);}
+  } else {
+    const id='c'+Date.now();
+    const nc={id,name,phone,email,points:0,totalSpent:0,visits:0,lastVisit:null,createdAt:Date.now()};
+    window._CLIENTS.push(nc);window._CLIENTS_K.push(id);
+    await window.fbSaveClient(id,nc);
+    if(fromCaisse)selectClient(nc);
+  }
+  closeAddClientModal();
+  if(!fromCaisse)renderClients();
+  ok(`✅ ${editKey?'Client modifié':'Client ajouté'} !`);
+}
+
+// Picker caisse
+function openClientPicker(){
+  document.getElementById('cp-search').value='';renderClientPicker();
+  document.getElementById('client-picker-ov').classList.add('open');
+}
+function renderClientPicker(){
+  const q=document.getElementById('cp-search')?.value?.toLowerCase()||'';
+  const list=window._CLIENTS.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.phone||'').includes(q));
+  const total=_ticket.reduce((a,t)=>a+t.price*t.qty,0);
+  const pts=Math.floor(total*10);
+  document.getElementById('cp-list').innerHTML=list.length?list.map(c=>{
+    const rank=getClientRank(c.points||0);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg2);border-radius:9px;cursor:pointer;border:1px solid var(--bd);transition:border-color .15s" onmouseover="this.style.borderColor='var(--or)'" onmouseout="this.style.borderColor='var(--bd)'"
+      onclick='selectClientByName(${JSON.stringify(c.name||"")},${JSON.stringify(clientKey(c)||"")})'>
+      <div style="font-size:22px">${rank.icon}</div>
+      <div style="flex:1"><div style="font-weight:600;font-size:13px">${esc(c.name)}</div>
+        <div style="font-size:11px;color:var(--txt2)">⭐ ${c.points||0} pts · ${rank.label}</div></div>
+      <div style="font-size:11px;color:var(--g);font-weight:700">+${pts} pts</div>
+    </div>`;
+  }).join(''):`<div class="empty">Aucun client trouvé</div>`;
+}
+function selectClientByName(name,key){
+  const idx=window._CLIENTS_K.indexOf(key);
+  if(idx>-1)selectClient(window._CLIENTS[idx]);
+}
+function selectClient(c){
+  _currentClient=c;
+  document.getElementById('client-picker-ov').classList.remove('open');
+  updateClientBar();renderTicket();
+}
+function clearClient(e){e.stopPropagation();_currentClient=null;updateClientBar();renderTicket();}
+function updateClientBar(){
+  if(!_currentClient){
+    document.getElementById('t-client-name').textContent='Aucun client lié';
+    document.getElementById('t-client-pts').textContent='Appuyer pour sélectionner';
+    document.getElementById('t-client-clear').style.display='none';
+    document.getElementById('t-client-icon').textContent='👤';
+  } else {
+    const rank=getClientRank(_currentClient.points||0);
+    document.getElementById('t-client-name').textContent=_currentClient.name;
+    document.getElementById('t-client-pts').textContent=`${rank.icon} ${rank.label} · ${_currentClient.points||0} pts`;
+    document.getElementById('t-client-clear').style.display='';
+    document.getElementById('t-client-icon').textContent=rank.icon;
+  }
+  // Preview points à gagner
+  const total=_ticket.reduce((a,t)=>a+t.price*t.qty,0);
+  const pts=Math.floor(total*10);
+  const ppEl=document.getElementById('t-points-preview');
+  if(ppEl){ppEl.style.display=_currentClient&&pts>0?'':'none';ppEl.textContent=`+${pts} pts pour ${_currentClient?.name||''}`;}
+}
+
+// ════════════════════════════════════════
+// ARDOISES
+// ════════════════════════════════════════
+function renderArdoises(){
+  const unpaid=window._ARDOISES.filter(a=>!a.paid);
+  const totalOwed=unpaid.reduce((s,a)=>s+a.amount,0);
+  const el=document.getElementById('ardoises-list');
+  const info=document.getElementById('ardoises-total');
+  if(info)info.textContent=`${unpaid.length} en cours · Total dû : ${fmt(totalOwed)}`;
+  if(!el)return;
+  if(!window._ARDOISES.length){el.innerHTML='<div class="empty">Aucune ardoise enregistrée</div>';return;}
+  const sorted=[...window._ARDOISES].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  el.innerHTML=sorted.map(a=>{
+    const key=window._ARDOISES_K[window._ARDOISES.indexOf(a)];
+    return `<div class="card" style="margin-bottom:10px;border-left:4px solid ${a.paid?'var(--g)':'var(--r)'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px;margin-bottom:3px">${esc(a.clientName)}</div>
+          <div style="font-size:12px;color:var(--txt2)">${a.desc||'—'} · ${new Date(a.ts||Date.now()).toLocaleDateString('fr-FR')}</div>
+          ${a.paid?`<div style="font-size:11px;color:var(--g);margin-top:3px">✅ Réglé le ${new Date(a.paidAt).toLocaleDateString('fr-FR')}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:${a.paid?'var(--g)':'var(--r)'}">${fmt(a.amount)}</div>
+          ${!a.paid?`<button class="abt" onclick="payArdoise('${key}')" style="color:var(--g);border-color:var(--g);margin-top:4px;font-size:11px">✅ Réglé</button>`:''}
+          <button class="abt" onclick="deleteArdoise('${key}')" style="color:var(--r);border-color:var(--r);margin-top:4px;font-size:11px;margin-left:4px">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function showAddArdoiseModal(){
+  const sel=document.getElementById('ard-client');
+  sel.innerHTML=`<option value="">— Sélectionner un client —</option>`+
+    window._CLIENTS.map((c,i)=>`<option value="${window._CLIENTS_K[i]}">${esc(c.name)}</option>`).join('');
+  ['ard-desc','ard-amount'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('add-ardoise-ov').classList.add('open');
+}
+async function saveArdoise(clientId,clientName,amount,desc){
+  const fromModal=clientId===undefined;
+  if(fromModal){
+    clientId=document.getElementById('ard-client').value;
+    if(!clientId){warn('Sélectionner un client');return;}
+    const idx=window._CLIENTS_K.indexOf(clientId);
+    clientName=idx>-1?window._CLIENTS[idx].name:'Inconnu';
+    amount=parseFloat(document.getElementById('ard-amount').value);
+    desc=document.getElementById('ard-desc').value.trim();
+  }
+  if(!amount||amount<=0){warn('Montant invalide');return;}
+  const id='a'+Date.now();
+  const ard={id,clientId,clientName,amount,desc:desc||'',ts:Date.now(),paid:false,paidAt:null,by:_currentUser?.name||'—'};
+  window._ARDOISES.push(ard);window._ARDOISES_K.push(id);
+  await window.fbSaveArdoise(id,ard);
+  if(fromModal){document.getElementById('add-ardoise-ov').classList.remove('open');renderArdoises();}
+  ok(`📋 Ardoise de ${fmt(amount)} pour ${clientName}`);
+}
+async function payArdoise(key){
+  const idx=window._ARDOISES_K.indexOf(key);if(idx===-1)return;
+  window._ARDOISES[idx]={...window._ARDOISES[idx],paid:true,paidAt:Date.now()};
+  await window.fbUpdateArdoise(key,{paid:true,paidAt:Date.now()});
+  renderArdoises();ok('✅ Ardoise réglée !');
+}
+function deleteArdoise(key){
+  showConfirm('🗑 Supprimer cette ardoise ?','',async()=>{
+    const idx=window._ARDOISES_K.indexOf(key);
+    if(idx>-1){window._ARDOISES.splice(idx,1);window._ARDOISES_K.splice(idx,1);}
+    await window.fbDeleteArdoise(key);renderArdoises();ok('Supprimé');
+  });
+}
+
+// ════════════════════════════════════════
+// MARGES / RENTABILITÉ
+// ════════════════════════════════════════
+function marginPct(p){
+  if(!p.buyPrice||p.buyPrice<=0||!p.price)return null;
+  return Math.round((p.price-p.buyPrice)/p.price*100);
+}
+function marginColor(pct){
+  if(pct===null)return'var(--txt3)';
+  if(pct<15)return'var(--r)';
+  if(pct<35)return'#f59e0b';
+  return'var(--g)';
+}
+function todayProfit(){
+  return todaySales().reduce((sum,sale)=>sum+(sale.items||[]).reduce((s2,it)=>{
+    const p=window._P.find(x=>x.id===it.id||x.name===it.name);
+    if(!p||!p.buyPrice||!p.price)return s2;
+    return s2+(p.price-p.buyPrice)*(it.qty||1);
+  },0),0);
+}
+
 function showCashManuelModal(){
   if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Accès réservé au gérant');return;}
   const theo=soldeTheorique();
@@ -4226,7 +4766,12 @@ function deleteProfile(id){
 // CALCULATRICE (état séparé)
 // ════════════════════════════════════════
 let _ce='',_cp='',_co='',_cn=true;
-function cN(n){if(_cn){_ce='';_cn=false;}_ce+=n;document.getElementById('cv').textContent=_ce;}
+function cN(n){
+  if(_cn){_ce='';_cn=false;}
+  _ce+=n;
+  document.getElementById('cv').textContent=_ce;
+  checkEasterEgg(_ce);
+}
 function cDot(){if(!_ce.includes('.')){_ce+='.';document.getElementById('cv').textContent=_ce;}}
 function cOp(o){if(_ce){_cp=_ce;_co=o;document.getElementById('cx').textContent=_cp+' '+o;_cn=true;_ce='';}}
 function cEq(){
@@ -4265,6 +4810,181 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='Enter'||e.key==='=')cEq();
   else if(e.key==='Escape'||e.key.toLowerCase()==='c')cClear();
 });
+
+// ════════════════════════════════════════
+// 🥚 EASTER EGGS
+// ════════════════════════════════════════
+function checkEasterEgg(val){
+  if(val==='17012005'){launchSnake();return;}
+  if(val==='1337'){launchMatrixRain();return;}
+  if(val==='999'){launchConfetti('🎉 Triple neuf !');return;}
+}
+
+// ─── SNAKE ───
+let _snakeLoop=null,_snake=[],_snakeDir={x:1,y:0},_snakeNextDir={x:1,y:0},_snakeFood={},_snakeScore=0,_snakeRunning=false;
+const SZ=15,COLS=20,ROWS=20;
+
+function launchSnake(){
+  document.getElementById('snake-ov').classList.add('open');
+  const best=localStorage.getItem('kliko_snake_best')||0;
+  document.getElementById('snake-best').textContent=best>0?'Meilleur : '+best:'';
+  startSnake();
+}
+function startSnake(){
+  _snakeRunning=true;_snakeScore=0;_snakeDir={x:1,y:0};_snakeNextDir={x:1,y:0};
+  _snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+  document.getElementById('snake-score').textContent='0';
+  document.getElementById('snake-msg').textContent='';
+  placeSnakeFood();
+  if(_snakeLoop)clearInterval(_snakeLoop);
+  _snakeLoop=setInterval(snakeTick,120);
+}
+function stopSnake(){
+  if(_snakeLoop)clearInterval(_snakeLoop);_snakeRunning=false;
+  document.getElementById('snake-ov').classList.remove('open');
+  cClear();
+}
+function placeSnakeFood(){
+  let f;
+  do{f={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)};}
+  while(_snake.some(s=>s.x===f.x&&s.y===f.y));
+  _snakeFood=f;
+}
+function snakeDir(dx,dy){
+  if(dx!==0&&_snakeDir.x!==0)return;
+  if(dy!==0&&_snakeDir.y!==0)return;
+  _snakeNextDir={x:dx,y:dy};
+}
+function snakeTick(){
+  _snakeDir={..._snakeNextDir};
+  const head={x:(_snake[0].x+_snakeDir.x+COLS)%COLS,y:(_snake[0].y+_snakeDir.y+ROWS)%ROWS};
+  if(_snake.some(s=>s.x===head.x&&s.y===head.y)){snakeGameOver();return;}
+  _snake.unshift(head);
+  const ate=head.x===_snakeFood.x&&head.y===_snakeFood.y;
+  if(ate){_snakeScore++;document.getElementById('snake-score').textContent=_snakeScore;placeSnakeFood();}
+  else _snake.pop();
+  drawSnake();
+}
+function drawSnake(){
+  const cv=document.getElementById('snake-canvas');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#0d0d10';ctx.fillRect(0,0,cv.width,cv.height);
+  // Grid subtle
+  ctx.strokeStyle='rgba(255,255,255,.03)';ctx.lineWidth=1;
+  for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*SZ,0);ctx.lineTo(i*SZ,cv.height);ctx.stroke();}
+  for(let j=0;j<=ROWS;j++){ctx.beginPath();ctx.moveTo(0,j*SZ);ctx.lineTo(cv.width,j*SZ);ctx.stroke();}
+  // Snake
+  _snake.forEach((s,i)=>{
+    const grad=ctx.createRadialGradient(s.x*SZ+SZ/2,s.y*SZ+SZ/2,0,s.x*SZ+SZ/2,s.y*SZ+SZ/2,SZ/2);
+    grad.addColorStop(0,i===0?'#f0a500':'#c8840a');grad.addColorStop(1,i===0?'#c8840a':'#7a4d00');
+    ctx.fillStyle=grad;ctx.beginPath();ctx.roundRect(s.x*SZ+1,s.y*SZ+1,SZ-2,SZ-2,4);ctx.fill();
+    if(i===0){ctx.fillStyle='#111';ctx.fillRect(s.x*SZ+(_snakeDir.x>=0?SZ-5:2),s.y*SZ+4,2,2);ctx.fillRect(s.x*SZ+(_snakeDir.x>=0?SZ-5:2),s.y*SZ+SZ-6,2,2);}
+  });
+  // Food (pomme dorée animée)
+  const pulse=0.85+0.15*Math.sin(Date.now()/200);
+  ctx.fillStyle=`rgba(45,217,143,${pulse})`;
+  ctx.beginPath();ctx.arc(_snakeFood.x*SZ+SZ/2,_snakeFood.y*SZ+SZ/2,SZ/2-2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('€',_snakeFood.x*SZ+SZ/2,_snakeFood.y*SZ+SZ/2+0.5);
+}
+function snakeGameOver(){
+  clearInterval(_snakeLoop);_snakeRunning=false;
+  const best=parseInt(localStorage.getItem('kliko_snake_best')||0);
+  if(_snakeScore>best){localStorage.setItem('kliko_snake_best',_snakeScore);document.getElementById('snake-best').textContent='Meilleur : '+_snakeScore;}
+  document.getElementById('snake-msg').textContent=_snakeScore>=15?'🏆 Impressionnant !':_snakeScore>=5?'💪 Pas mal !':'😅 Recommencer ?';
+  const cv=document.getElementById('snake-canvas');const ctx=cv?.getContext('2d');
+  if(ctx){ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.fillStyle='#f0a500';ctx.font='bold 22px Syne,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('GAME OVER',cv.width/2,cv.height/2-12);
+    ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='14px DM Sans,sans-serif';
+    ctx.fillText('Score : '+_snakeScore,cv.width/2,cv.height/2+16);
+    ctx.fillStyle='rgba(240,165,0,.5)';ctx.font='12px DM Sans,sans-serif';
+    ctx.fillText('Appuie sur ▶ pour rejouer',cv.width/2,cv.height/2+38);
+  }
+  // Bouton rejouer sur le canvas
+  const msgEl=document.getElementById('snake-msg');
+  if(msgEl)msgEl.innerHTML=msgEl.textContent+' <button onclick="startSnake()" style="background:var(--or);border:none;border-radius:6px;padding:3px 10px;color:#000;font-weight:700;cursor:pointer;font-size:11px">▶ Rejouer</button>';
+}
+// Contrôles clavier Snake
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('snake-ov')?.classList.contains('open'))return;
+  if(e.key==='Escape'){stopSnake();return;}
+  if(!_snakeRunning){if(e.key==='Enter'||e.key===' '){e.preventDefault();startSnake();}return;}
+  const map={ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1}};
+  if(map[e.key]){e.preventDefault();const d=map[e.key];if(d.x!==0&&_snakeDir.x!==0)return;if(d.y!==0&&_snakeDir.y!==0)return;_snakeNextDir=d;}
+});
+// Swipe tactile
+(()=>{let sx,sy;
+  document.addEventListener('touchstart',e=>{if(!document.getElementById('snake-ov')?.classList.contains('open'))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+  document.addEventListener('touchend',e=>{if(!document.getElementById('snake-ov')?.classList.contains('open'))return;
+    const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)<30&&Math.abs(dy)<30)return;
+    if(Math.abs(dx)>Math.abs(dy))snakeDir(dx>0?1:-1,0);else snakeDir(0,dy>0?1:-1);
+  },{passive:true});
+})();
+
+// ─── MATRIX RAIN ───
+function launchMatrixRain(){
+  const existing=document.getElementById('matrix-overlay');
+  if(existing){existing.remove();return;}
+  const ov=document.createElement('div');
+  ov.id='matrix-overlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:hidden;background:rgba(0,0,0,.85)';
+  const cv=document.createElement('canvas');cv.style.cssText='width:100%;height:100%';ov.appendChild(cv);
+  const closeBtn=document.createElement('div');
+  closeBtn.textContent='Cliquez pour fermer';
+  closeBtn.style.cssText='position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:rgba(0,255,70,.5);font-size:12px;font-family:monospace;pointer-events:auto;cursor:pointer;';
+  closeBtn.onclick=()=>{ov.remove();cClear();};
+  ov.style.pointerEvents='auto';ov.onclick=e=>{if(e.target===ov||e.target===cv){ov.remove();cClear();}};
+  ov.appendChild(closeBtn);
+  document.body.appendChild(ov);
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
+  const ctx=cv.getContext('2d');const cols=Math.floor(cv.width/14);
+  const drops=Array(cols).fill(1);
+  const chars='0123456789KLIKO€$%#@';
+  const interval=setInterval(()=>{
+    if(!document.getElementById('matrix-overlay')){clearInterval(interval);return;}
+    ctx.fillStyle='rgba(0,0,0,.05)';ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.fillStyle='#0f0';ctx.font='13px monospace';
+    drops.forEach((y,i)=>{ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*14,y*14);if(y*14>cv.height&&Math.random()>.975)drops[i]=0;drops[i]++;});
+  },40);
+  setTimeout(()=>{const el=document.getElementById('matrix-overlay');if(el){el.remove();clearInterval(interval);}},8000);
+  cClear();
+}
+
+// ─── CONFETTI ───
+function launchConfetti(msg='🎉'){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:9997;pointer-events:none;overflow:hidden';
+  document.body.appendChild(ov);
+  if(msg){const lbl=document.createElement('div');
+    lbl.textContent=msg;lbl.style.cssText='position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-family:Syne,sans-serif;font-size:32px;font-weight:800;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.5);animation:fadeUp .5s ease both;pointer-events:none;text-align:center;white-space:nowrap';
+    ov.appendChild(lbl);}
+  const colors=['#f0a500','#2dd98f','#4e9eff','#ff4f6a','#9b72ff','#ffd166'];
+  for(let i=0;i<80;i++){
+    const el=document.createElement('div');
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    const size=Math.random()*10+5;
+    el.style.cssText=`position:absolute;width:${size}px;height:${size}px;background:${color};border-radius:${Math.random()>0.5?'50%':'2px'};left:${Math.random()*100}%;top:-20px;opacity:1;transform:rotate(${Math.random()*360}deg)`;
+    ov.appendChild(el);
+    const dur=Math.random()*1500+800;const delay=Math.random()*600;
+    el.animate([{top:'-20px',opacity:1,transform:`rotate(0deg) translateX(${(Math.random()-.5)*200}px)`},{top:'110vh',opacity:0,transform:`rotate(${Math.random()*720}deg) translateX(${(Math.random()-.5)*400}px)`}],{duration:dur,delay,easing:'cubic-bezier(.25,.46,.45,.94)',fill:'forwards'});
+  }
+  setTimeout(()=>ov.remove(),2500);
+}
+
+// Déclencher confetti quand objectif atteint
+function checkDailyGoal(){
+  const goal=parseInt(localStorage.getItem('kliko_goal')||300);
+  const ca=todaySales().reduce((a,s)=>a+s.total,0);
+  const prev=parseFloat(sessionStorage.getItem('kliko_goal_done')||0);
+  if(ca>=goal&&prev<goal){sessionStorage.setItem('kliko_goal_done',ca);launchConfetti('🎯 Objectif atteint !');}
+}
+
+// Konami code easter egg
+(()=>{const K=[38,38,40,40,37,39,37,39,66,65];let ki=0;
+  document.addEventListener('keydown',e=>{if(e.keyCode===K[ki])ki++;else ki=0;if(ki===K.length){ki=0;launchConfetti('🎮 Konami !');}});
+})();
 
 // ════════════════════════════════════════
 // HORLOGE
