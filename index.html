@@ -1049,10 +1049,7 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
         <div class="solde-label">🧮 Caisse théorique</div>
         <div class="solde-val pos" id="solde-val">0,00 €</div>
         <div class="solde-detail" id="solde-detail">—</div>
-        <div id="fond-caisse-line" style="margin-top:6px;font-size:11px;color:rgba(255,255,255,.4);display:none">
-          🏦 Fond de caisse : <span id="fond-caisse-display" style="color:rgba(255,255,255,.7);font-weight:600">0,00 €</span>
-          <button id="btn-edit-fond" onclick="showFondCaisseModal()" style="background:rgba(255,200,0,.15);border:1px solid rgba(255,200,0,.3);color:#f0a500;border-radius:4px;padding:1px 7px;font-size:10px;cursor:pointer;font-weight:700;margin-left:6px;display:none">✏️</button>
-        </div>
+        <div id="fond-caisse-line" style="display:none"></div>
         <div style="display:flex;gap:6px;margin-top:8px">
           <button id="btn-corriger-theorique" onclick="showCorrectTheoModal()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;display:none">✏️ Corriger</button>
           <button id="btn-force-caisse" onclick="showForceCaisseModal()" style="background:rgba(78,158,255,.15);border:1px solid rgba(78,158,255,.3);color:var(--bl);border-radius:7px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:700;display:none">🔒 Forcer</button>
@@ -2398,7 +2395,16 @@ function goPage(id){
   const bel=document.getElementById('nb-'+id);
   if(pel)pel.classList.add('active');
   if(bel)bel.classList.add('active');
-const map={dash:renderDash,caisse:renderCaisse,stock:renderStock,cmd:renderOrders,ded:renderDed,histo:renderHisto,'cc-admin':renderCCAdmin,rep:renderRepairs,factures:renderFactures,profils:renderProfiles};  if(map[id])map[id]();
+  // Scroll retour en haut
+  pel?.scrollTo?.(0,0);
+  window.scrollTo(0,0);
+  const map={
+    dash:renderDash,caisse:renderCaisse,stock:renderStock,cmd:renderOrders,
+    ded:renderDed,histo:renderHisto,'cc-admin':renderCCAdmin,rep:renderRepairs,
+    factures:renderFactures,profils:renderProfiles,
+    params:renderParams,clients:renderClients,ardoises:renderArdoises
+  };
+  if(map[id])map[id]();
 }
 
 // ════════════════════════════════════════
@@ -2442,7 +2448,7 @@ function weekSales(){
 function _resetTs(){return window._CAISSE_RESET?window._CAISSE_RESET.ts:0;}
 function cashSalesTotal(){
   const since=_resetTs();
-  return (window._FOND_CAISSE||0)+window._S.filter(s=>(!s.payMode||s.payMode==='especes')&&(s.ts||0)>=since).reduce((a,s)=>a+s.total,0);
+  return window._S.filter(s=>(!s.payMode||s.payMode==='especes')&&(s.ts||0)>=since).reduce((a,s)=>a+s.total,0);
 }
 function totalDeds(){
   const since=_resetTs();
@@ -2915,12 +2921,10 @@ function renderDed(){
   const isMehdi=_currentUser&&_currentUser.id==='mehdi';
   const dedFilter=document.getElementById('ded-filter').value;
   const since=_resetTs();
-  // Utiliser les fonctions qui respectent le timestamp de reset
-  const fond=window._FOND_CAISSE||0;
   const cashIn=window._S.filter(s=>(!s.payMode||s.payMode==='especes')&&(s.ts||0)>=since).reduce((a,s)=>a+s.total,0);
   const cardIn=window._S.filter(s=>s.payMode==='carte'&&(s.ts||0)>=since).reduce((a,s)=>a+s.total,0);
   const totalDed=window._D.filter(d=>(d.ts||0)>=since).reduce((a,d)=>a+d.amount,0);
-  const solde=(fond+cashIn)-totalDed;
+  const solde=cashIn-totalDed;
 
   document.getElementById('solde-val').textContent=fmt(Math.abs(solde));
   document.getElementById('solde-val').className='solde-val '+(solde<0?'neg':'pos');
@@ -3369,9 +3373,11 @@ function showResetCaisseModal(){
 async function doResetCaisse(){
   if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Réservé au gérant');return;}
   const note=document.getElementById('reset-caisse-note').value.trim();
-  const data={ts:Date.now(),by:_currentUser.name,note,fondBefore:window._FOND_CAISSE||0};
-  // Aussi remettre fond à 0
-  await window.saveFondCaisseLocal(0);
+  const data={ts:Date.now(),by:_currentUser.name,note};
+  // Effacer aussi le forçage pour que le calcul parte vraiment de zéro
+  window._CAISSE_FORCE=null;
+  window._FOND_CAISSE=0;
+  await window.fbDeleteCaisseForce();
   await window.fbSaveCaisseReset(data);
   document.getElementById('reset-caisse-ov').classList.remove('open');
   ok('✅ Caisse réinitialisée ! Théorique repart à zéro.');
@@ -3482,12 +3488,10 @@ function exportJSON(){
 function showCorrectTheoModal(){
   if(!_currentUser||_currentUser.id!=='mehdi'){warn('🔒 Réservé au gérant');return;}
   const theo=soldeTheorique();
-  const cashIn=cashSalesTotal()-(window._FOND_CAISSE||0);
-  const deds=totalDeds();
+  const calculated=cashSalesTotal()-totalDeds();
   document.getElementById('correct-theo-info').innerHTML=
-    `<strong>Théorique actuel : ${fmt(theo)}</strong><br>
-     Ventes espèces (depuis reset) : ${fmt(cashIn)} · Déductions : ${fmt(deds)}<br>
-     <span style="opacity:.8">Entrez le montant que devrait afficher la caisse théorique.</span>`;
+    `<strong>Solde calculé : ${fmt(calculated)}</strong><br>
+     <span style="opacity:.8">Entrez le montant que doit afficher la caisse théorique. Il sera appliqué directement.</span>`;
   document.getElementById('correct-theo-inp').value=theo.toFixed(2);
   document.getElementById('correct-theo-ov').classList.add('open');
   setTimeout(()=>document.getElementById('correct-theo-inp')?.select(),80);
@@ -3495,10 +3499,10 @@ function showCorrectTheoModal(){
 async function saveCorrectTheo(){
   const target=parseFloat(document.getElementById('correct-theo-inp').value);
   if(isNaN(target)){warn('Montant invalide');return;}
-  const cashIn=cashSalesTotal()-(window._FOND_CAISSE||0);
-  const deds=totalDeds();
-  const newFond=parseFloat((target-(cashIn-deds)).toFixed(2));
-  await window.saveFondCaisseLocal(newFond);
+  // On force directement la valeur — plus de fond de caisse négatif
+  const data={amount:target,note:'Correction manuelle',by:'Mehdi',ts:Date.now()};
+  window._CAISSE_FORCE=data;
+  await window.fbSaveCaisseForce(data);
   document.getElementById('correct-theo-ov').classList.remove('open');
   renderDed();renderDash();
   ok(`✅ Caisse théorique corrigée → ${fmt(target)}`);
@@ -4869,23 +4873,29 @@ function drawSnake(){
   const cv=document.getElementById('snake-canvas');if(!cv)return;
   const ctx=cv.getContext('2d');
   ctx.fillStyle='#0d0d10';ctx.fillRect(0,0,cv.width,cv.height);
-  // Grid subtle
-  ctx.strokeStyle='rgba(255,255,255,.03)';ctx.lineWidth=1;
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
   for(let i=0;i<=COLS;i++){ctx.beginPath();ctx.moveTo(i*SZ,0);ctx.lineTo(i*SZ,cv.height);ctx.stroke();}
   for(let j=0;j<=ROWS;j++){ctx.beginPath();ctx.moveTo(0,j*SZ);ctx.lineTo(cv.width,j*SZ);ctx.stroke();}
-  // Snake
+  // Snake (fillRect — compatible tous navigateurs)
   _snake.forEach((s,i)=>{
-    const grad=ctx.createRadialGradient(s.x*SZ+SZ/2,s.y*SZ+SZ/2,0,s.x*SZ+SZ/2,s.y*SZ+SZ/2,SZ/2);
-    grad.addColorStop(0,i===0?'#f0a500':'#c8840a');grad.addColorStop(1,i===0?'#c8840a':'#7a4d00');
-    ctx.fillStyle=grad;ctx.beginPath();ctx.roundRect(s.x*SZ+1,s.y*SZ+1,SZ-2,SZ-2,4);ctx.fill();
-    if(i===0){ctx.fillStyle='#111';ctx.fillRect(s.x*SZ+(_snakeDir.x>=0?SZ-5:2),s.y*SZ+4,2,2);ctx.fillRect(s.x*SZ+(_snakeDir.x>=0?SZ-5:2),s.y*SZ+SZ-6,2,2);}
+    ctx.fillStyle=i===0?'#f0a500':'#a06800';
+    ctx.fillRect(s.x*SZ+1,s.y*SZ+1,SZ-2,SZ-2);
+    if(i===0){
+      ctx.fillStyle='#111';
+      const ex=_snakeDir.x>0?SZ-4:(_snakeDir.x<0?2:SZ/2-1);
+      ctx.fillRect(s.x*SZ+ex,s.y*SZ+3,2,2);
+      ctx.fillRect(s.x*SZ+ex,s.y*SZ+SZ-5,2,2);
+    }
   });
-  // Food (pomme dorée animée)
-  const pulse=0.85+0.15*Math.sin(Date.now()/200);
+  // Nourriture (€ pulsé)
+  const pulse=0.7+0.3*Math.sin(Date.now()/180);
   ctx.fillStyle=`rgba(45,217,143,${pulse})`;
-  ctx.beginPath();ctx.arc(_snakeFood.x*SZ+SZ/2,_snakeFood.y*SZ+SZ/2,SZ/2-2,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();
+  ctx.arc(_snakeFood.x*SZ+SZ/2,_snakeFood.y*SZ+SZ/2,SZ/2-1,0,Math.PI*2);
+  ctx.fill();
   ctx.fillStyle='#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('€',_snakeFood.x*SZ+SZ/2,_snakeFood.y*SZ+SZ/2+0.5);
+  ctx.fillText('€',_snakeFood.x*SZ+SZ/2+0.5,_snakeFood.y*SZ+SZ/2+0.5);
 }
 function snakeGameOver(){
   clearInterval(_snakeLoop);_snakeRunning=false;
