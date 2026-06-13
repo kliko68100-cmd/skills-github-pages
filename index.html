@@ -742,6 +742,16 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
   box-shadow:0 0 0 3px var(--or-glow);
 }
 
+/* Coach IA */
+.coach-chip{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;padding:6px 13px;font-size:12px;color:var(--txt2);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.coach-chip:hover{border-color:var(--or);color:var(--or)}
+.coach-msg{padding:11px 14px;border-radius:12px;font-size:13px;line-height:1.65;max-width:88%;animation:fadeUp .2s ease both}
+.coach-msg.user{background:var(--or);color:#000;align-self:flex-end;border-radius:12px 12px 3px 12px;font-weight:500}
+.coach-msg.ai{background:var(--card);border:1px solid var(--bd);align-self:flex-start;border-radius:12px 12px 12px 3px}
+.coach-msg.thinking{opacity:.6;font-style:italic}
+.coach-msg strong{font-weight:700}
+.coach-msg ul{margin:6px 0 4px 16px;padding:0}
+.coach-msg li{margin-bottom:3px}
 /* Scrollbar refined */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -1410,11 +1420,61 @@ body{font-family:'DM Sans',sans-serif;transition:background .3s,color .3s}
         <button class="btn" onclick="exportJSON()">📦 Backup JSON</button>
       </div>
     </div>
+
+    <!-- Clé API Coach IA -->
+    <div class="card" style="margin-top:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px;font-family:'Syne',sans-serif">🤖 Coach IA — Clé API</div>
+      <div style="font-size:12px;color:var(--txt2);margin-bottom:12px;line-height:1.6">
+        Crée une clé sur <strong>console.anthropic.com</strong> → API Keys → Create Key.<br>
+        Stockée uniquement sur cet appareil, jamais partagée.
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="fi" type="password" id="api-key-input" placeholder="sk-ant-api03-…" style="flex:1;font-family:monospace">
+        <button class="btn btn-primary" onclick="saveApiKey()">💾 Sauvegarder</button>
+      </div>
+      <div id="api-key-status" style="font-size:11px;margin-top:8px;color:var(--txt2)"></div>
+    </div>
   </div>
 
 </div>
 
-  <!-- CLIENTS / FIDÉLITÉ -->
+  <!-- COACH IA -->
+  <div class="page" id="p-coach">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:18px;font-weight:800;font-family:'Syne',sans-serif;color:var(--txt)">🤖 Coach IA</div>
+        <div style="font-size:12px;color:var(--txt2);margin-top:2px">Spécialisé commerce de proximité · Propulsé par Claude</div>
+      </div>
+      <button class="btn" onclick="clearCoachHistory()">🗑 Effacer</button>
+    </div>
+
+    <!-- Suggestions rapides -->
+    <div id="coach-suggestions" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="coach-chip" onclick="sendCoachMsg(this.textContent)">📊 Analyse mon business aujourd'hui</button>
+      <button class="coach-chip" onclick="sendCoachMsg(this.textContent)">📦 Quel stock dois-je renouveler ?</button>
+      <button class="coach-chip" onclick="sendCoachMsg(this.textContent)">💡 Comment augmenter mon CA ?</button>
+      <button class="coach-chip" onclick="sendCoachMsg(this.textContent)">🔍 Quels produits sont peu rentables ?</button>
+      <button class="coach-chip" onclick="sendCoachMsg(this.textContent)">👥 Rapport sur mes clients fidèles</button>
+      <button class="coach-chip" onclick="sendCoachMsg(this.textContent)">📋 Ardoises en cours ?</button>
+    </div>
+
+    <!-- Zone de conversation -->
+    <div id="coach-messages" style="min-height:320px;max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px;padding-right:4px"></div>
+
+    <!-- Input -->
+    <div id="coach-no-key" style="display:none;background:rgba(255,79,106,.08);border:1px solid rgba(255,79,106,.2);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--r);margin-bottom:12px">
+      🔑 Clé API manquante. Va dans <strong>⚙️ Paramètres</strong> → Coach IA pour l'ajouter.
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <textarea id="coach-input" class="fi" rows="2" placeholder="Pose une question sur ton business…"
+        style="flex:1;resize:none;line-height:1.5"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCoachMsg();}"></textarea>
+      <button class="btn btn-primary" onclick="sendCoachMsg()" id="coach-send-btn" style="padding:10px 16px;align-self:flex-end">
+        ↑ Envoyer
+      </button>
+    </div>
+    <div style="font-size:10px;color:var(--txt3);margin-top:6px">Entrée pour envoyer · Shift+Entrée pour saut de ligne</div>
+  </div>
   <div class="page" id="p-clients">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <div><div style="font-size:18px;font-weight:800;font-family:'Syne',sans-serif;color:var(--txt)">🤝 Clients & Fidélité</div>
@@ -2048,6 +2108,7 @@ function refreshPage(){
   else if(id==='p-params')renderParams();
   else if(id==='p-clients')renderClients();
   else if(id==='p-ardoises')renderArdoises();
+  else if(id==='p-coach')renderCoach();
 }
 
 async function fbSet(path,val){syncUI('sync');try{await set(ref(db,path),val);syncUI('ok');}catch(e){syncUI('err');showToast('⚠ Erreur sync');}}
@@ -2378,10 +2439,10 @@ const PAGE_LABELS={
   cmd:'📋 Commandes',ded:'➖ Déductions',histo:'🕐 Historique',
   'cc-admin':'🛍 Click & Collect',rep:'🔧 Réparations',factures:'🧾 Factures',
   calc:'🧮 Calculatrice',profils:'👥 Profils',params:'⚙️ Paramètres',
-  clients:'🤝 Clients',ardoises:'📋 Ardoises'
+  clients:'🤝 Clients',ardoises:'📋 Ardoises',coach:'🤖 Coach IA'
 };
-const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','profils','params','clients','ardoises'];
-const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','clients','ardoises'];
+const GERANT_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','profils','params','clients','ardoises','coach'];
+const PATRON_PAGES=['dash','caisse','stock','cmd','ded','histo','cc-admin','rep','factures','calc','clients','ardoises','coach'];
 const VENDEUR_PAGES=['caisse','stock','calc'];
 
 function buildNav(){
@@ -2402,7 +2463,7 @@ function goPage(id){
     dash:renderDash,caisse:renderCaisse,stock:renderStock,cmd:renderOrders,
     ded:renderDed,histo:renderHisto,'cc-admin':renderCCAdmin,rep:renderRepairs,
     factures:renderFactures,profils:renderProfiles,
-    params:renderParams,clients:renderClients,ardoises:renderArdoises
+    params:renderParams,clients:renderClients,ardoises:renderArdoises,coach:renderCoach
   };
   if(map[id])map[id]();
 }
@@ -2932,16 +2993,6 @@ function renderDed(){
   document.getElementById('solde-detail').textContent='Ventes espèces : '+fmt(cashIn)+' · Déduit : '+fmt(totalDed);
   document.getElementById('solde-card-total').textContent='Carte : '+fmt(cardIn)+' (non inclus dans la caisse)';
 
-  // Fond de caisse (visible par tous, modifiable que par Mehdi)
-  const fondLine=document.getElementById('fond-caisse-line');
-  const fondDisplay=document.getElementById('fond-caisse-display');
-  const btnFond=document.getElementById('btn-edit-fond');
-  if(fondLine){
-    fondLine.style.display=fond>0||isMehdi?'block':'none';
-    if(fondDisplay)fondDisplay.textContent=fmt(fond);
-    if(btnFond)btnFond.style.display=isMehdi?'inline':'none';
-  }
-
   // Bouton "Forcer" caisse théorique — Mehdi uniquement
   const btnForce=document.getElementById('btn-force-caisse');
   if(btnForce)btnForce.style.display=isMehdi?'':'none';
@@ -3361,6 +3412,11 @@ function renderParams(){
       resetInfo.innerHTML=`<div style="font-size:12px;color:var(--txt2)">Aucun reset actif — la caisse compte depuis le début.</div>`;
     }
   }
+  // Statut clé API Coach
+  const keyStatus=document.getElementById('api-key-status');
+  if(keyStatus)keyStatus.innerHTML=getApiKey()
+    ?`✅ Clé configurée — <button onclick="localStorage.removeItem('kliko_api_key');renderParams()" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:11px;text-decoration:underline">Supprimer</button>`
+    :'⚠️ Pas de clé — le Coach IA ne fonctionnera pas.';
 }
 
 function showResetCaisseModal(){
@@ -4816,7 +4872,183 @@ document.addEventListener('keydown',e=>{
 });
 
 // ════════════════════════════════════════
-// 🥚 EASTER EGGS
+// 🤖 COACH IA
+// ════════════════════════════════════════
+let _coachHistory=[]; // [{role,content}]
+
+function getApiKey(){return localStorage.getItem('kliko_api_key')||'';}
+function saveApiKey(){
+  const k=document.getElementById('api-key-input')?.value?.trim();
+  if(!k){warn('Clé vide');return;}
+  if(!k.startsWith('sk-ant')){warn('Format invalide (doit commencer par sk-ant)');return;}
+  localStorage.setItem('kliko_api_key',k);
+  const el=document.getElementById('api-key-status');
+  if(el)el.innerHTML='✅ Clé sauvegardée sur cet appareil';
+  ok('✅ Clé API sauvegardée !');
+}
+
+function buildCoachContext(){
+  const today=todaySales();
+  const todayCA=today.reduce((a,s)=>a+s.total,0);
+  const todayCash=today.filter(s=>!s.payMode||s.payMode==='especes').reduce((a,s)=>a+s.total,0);
+  const todayCard=today.filter(s=>s.payMode==='carte').reduce((a,s)=>a+s.total,0);
+  const goal=parseInt(localStorage.getItem('kliko_goal')||300);
+  const weekCA=weekSales().reduce((a,s)=>a+s.total,0);
+  const lowStock=window._P.filter(p=>p.stock<3&&p.stock>0);
+  const outStock=window._P.filter(p=>p.stock===0);
+  const topProducts=[...window._P].sort((a,b)=>(b.salesCount||0)-(a.salesCount||0)).slice(0,5);
+  const unpaidArd=window._ARDOISES.filter(a=>!a.paid);
+  const totalDue=unpaidArd.reduce((s,a)=>s+a.amount,0);
+  const profit=todayProfit();
+  const since=_resetTs();
+  const totalDed=totalDeds();
+
+  // Produits avec marges
+  const withMargin=window._P.filter(p=>p.buyPrice>0).map(p=>({
+    name:p.name,price:p.price,buyPrice:p.buyPrice,
+    margin:Math.round((p.price-p.buyPrice)/p.price*100)+'%',stock:p.stock
+  }));
+
+  return `Tu es le Coach Business IA intégré à l'application Kliko POS de ${_currentUser?.name||'Mehdi'}.
+Tu es un expert en gestion de commerce de proximité (retail, boutique, café/snack, accessoires).
+Tu parles français, tu es direct, concret et bienveillant. Tu donnes des conseils actionnables.
+Tu connais les données réelles du commerce en temps réel. Tu ne dois JAMAIS inventer des données.
+
+=== DONNÉES DU COMMERCE AUJOURD'HUI ===
+Date : ${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+Utilisateur connecté : ${_currentUser?.name||'—'} (${_currentUser?.role||'—'})
+
+CA aujourd'hui : ${fmt(todayCA)} (espèces: ${fmt(todayCash)} · carte: ${fmt(todayCard)})
+Objectif journalier : ${fmt(goal)} → ${todayCA>=goal?'✅ ATTEINT':'❌ '+fmt(goal-todayCA)+' restants'}
+CA semaine : ${fmt(weekCA)}
+Bénéfice brut estimé aujourd'hui : ${profit>0?fmt(profit):'non calculable (prix d\'achat manquants)'}
+Nb ventes aujourd'hui : ${today.length}
+Déductions depuis reset : ${fmt(totalDed)}
+
+=== STOCK ===
+Total produits : ${window._P.length}
+Rupture de stock : ${outStock.map(p=>p.name).join(', ')||'Aucune'}
+Stock bas (<3 unités) : ${lowStock.map(p=>p.name+' ('+p.stock+')').join(', ')||'Aucun'}
+Produits avec marge calculée : ${withMargin.length>0?withMargin.map(p=>`${p.name}: vente ${fmt(p.price)} achat ${fmt(p.buyPrice)} = ${p.margin} marge`).join(' | '):'Aucun prix d\'achat renseigné'}
+
+=== CLIENTS ===
+Clients fidélité inscrits : ${window._CLIENTS.length}
+${window._CLIENTS.slice(0,5).map(c=>{const r=getClientRank(c.points||0);return`${c.name}: ${c.points||0} pts (${r.label}), ${c.visits||0} visites, CA: ${fmt(c.totalSpent||0)}`;}).join('\n')}
+
+=== ARDOISES ===
+Ardoises en cours : ${unpaidArd.length} pour un total de ${fmt(totalDue)}
+${unpaidArd.slice(0,5).map(a=>`${a.clientName}: ${fmt(a.amount)} (${new Date(a.ts).toLocaleDateString('fr-FR')})`).join('\n')||'Aucune'}
+
+=== HISTORIQUE RÉCENT (10 dernières ventes) ===
+${[...window._S].sort((a,b)=>b.ts-a.ts).slice(0,10).map(s=>`${new Date(s.ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} · ${s.label} · ${fmt(s.total)} · ${s.payMode==='carte'?'Carte':'Espèces'} · ${s.seller||'—'}`).join('\n')||'Aucune vente'}
+
+Réponds toujours en français. Sois précis et utilise les vraies données ci-dessus.
+Si une question est hors sujet business, ramène poliment la conversation au commerce.`;
+}
+
+function renderCoach(){
+  const key=getApiKey();
+  const noKey=document.getElementById('coach-no-key');
+  const sendBtn=document.getElementById('coach-send-btn');
+  if(noKey)noKey.style.display=key?'none':'block';
+  if(sendBtn)sendBtn.disabled=!key;
+
+  // Afficher l'historique
+  const box=document.getElementById('coach-messages');
+  if(!box)return;
+  if(_coachHistory.length===0){
+    box.innerHTML=`<div class="coach-msg ai">
+      <strong>Bonjour ${_currentUser?.name||''} ! 👋</strong><br>
+      Je suis ton Coach IA spécialisé en gestion de commerce. J'ai accès à toutes tes données en temps réel — stock, ventes, clients, ardoises.<br><br>
+      Tu peux me poser des questions comme :<br>
+      <em>"Quels produits dois-je commander ?"</em> ou <em>"Comment améliorer ma rentabilité ?"</em>
+    </div>`;
+    return;
+  }
+  box.innerHTML=_coachHistory.map(m=>`
+    <div class="coach-msg ${m.role==='user'?'user':'ai'}">${m.role==='assistant'?formatCoachMsg(m.content):esc(m.content)}</div>
+  `).join('');
+  setTimeout(()=>box.scrollTop=box.scrollHeight,50);
+}
+
+function formatCoachMsg(text){
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs,'<ul>$1</ul>')
+    .replace(/\n/g,'<br>');
+}
+
+async function sendCoachMsg(text){
+  const key=getApiKey();
+  if(!key){warn('Clé API manquante — va dans ⚙️ Paramètres');goPage('params');return;}
+
+  const input=document.getElementById('coach-input');
+  const msg=(text||input?.value||'').trim();
+  if(!msg)return;
+  if(input)input.value='';
+
+  // Ajouter message user
+  _coachHistory.push({role:'user',content:msg});
+  renderCoach();
+
+  // Message "en train d'écrire"
+  const box=document.getElementById('coach-messages');
+  const thinking=document.createElement('div');
+  thinking.className='coach-msg ai thinking';
+  thinking.textContent='🤖 Coach IA réfléchit…';
+  box?.appendChild(thinking);
+  box.scrollTop=box.scrollHeight;
+
+  try{
+    const systemPrompt=buildCoachContext();
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system:systemPrompt,
+        messages:_coachHistory.map(m=>({role:m.role,content:m.content}))
+      })
+    });
+
+    thinking.remove();
+
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      const msg=err?.error?.message||'Erreur API ('+res.status+')';
+      if(res.status===401)_coachHistory.push({role:'assistant',content:'❌ Clé API invalide. Vérifie dans ⚙️ Paramètres.'});
+      else _coachHistory.push({role:'assistant',content:'❌ Erreur : '+msg});
+      renderCoach();return;
+    }
+
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'Pas de réponse.';
+    _coachHistory.push({role:'assistant',content:reply});
+
+    // Garder max 20 échanges en mémoire
+    if(_coachHistory.length>40)_coachHistory=_coachHistory.slice(-40);
+
+  }catch(e){
+    thinking?.remove();
+    _coachHistory.push({role:'assistant',content:'❌ Erreur réseau. Vérifie ta connexion.'});
+  }
+  renderCoach();
+}
+
+function clearCoachHistory(){
+  _coachHistory=[];renderCoach();ok('Conversation effacée');
+}
+
+// ════════════════════════════════════════
+// EASTER EGGS
 // ════════════════════════════════════════
 function checkEasterEgg(val){
   if(val==='17012005'){launchSnake();return;}
